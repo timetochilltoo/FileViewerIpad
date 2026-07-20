@@ -1,0 +1,561 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3E07789949967AEB3D7AFAEF /* DocumentAccessRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */; };
+		4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */; };
+		8730D89267DAE80030C92F3B /* FileViewerIpadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */; };
+		93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */; };
+		9969C3E764FE58C39650B51B /* DocumentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */; };
+		9E83274B6BAFD0E30DAC30FE /* DocumentAccessRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */; };
+		B91E9A27A58356C689AEF675 /* DocumentAccessProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */; };
+		D58D7F14BFE2AF289E64AA71 /* FileViewerIpadUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */; };
+		DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3BD1A4A1E52D6AF2FA60BB65 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 872DD78FDC4FCEB5C9339A60 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BAD92FF6C188BFBA8296DCB8;
+			remoteInfo = FileViewerIpad;
+		};
+		7BE51EF366310B19352CB6A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 872DD78FDC4FCEB5C9339A60 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BAD92FF6C188BFBA8296DCB8;
+			remoteInfo = FileViewerIpad;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1A8E152949AB8838DBB7336B /* FileViewerIpadUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FileViewerIpadUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentModels.swift; sourceTree = "<group>"; };
+		7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistry.swift; sourceTree = "<group>"; };
+		7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistryTests.swift; sourceTree = "<group>"; };
+		A1D2F86176AEFF868B462839 /* FileViewerIpad.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FileViewerIpad.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessProtocols.swift; sourceTree = "<group>"; };
+		C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
+		D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadUITests.swift; sourceTree = "<group>"; };
+		EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadApp.swift; sourceTree = "<group>"; };
+		ECF9CD813CD7E2181F993C89 /* FileViewerIpadTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FileViewerIpadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModelTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1AB67DA57E30BBBF2EA5AE76 /* FileViewerIpadTests */ = {
+			isa = PBXGroup;
+			children = (
+				9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */,
+				F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */,
+			);
+			path = FileViewerIpadTests;
+			sourceTree = "<group>";
+		};
+		1EDAE7A6FE52536CCBB61C0E /* FileAccess */ = {
+			isa = PBXGroup;
+			children = (
+				AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */,
+				7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */,
+			);
+			path = FileAccess;
+			sourceTree = "<group>";
+		};
+		215A0F3B2DEDC30E16E8B82E /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				AF2DB7C58EA093F0C56AA655 /* Workspace */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		232DD26D31F854AD51592322 /* FileViewerIpad */ = {
+			isa = PBXGroup;
+			children = (
+				B61EA0072E49FD85173BDF4F /* App */,
+				7041EDF9F8AA39B308F9EEF8 /* Core */,
+				215A0F3B2DEDC30E16E8B82E /* Features */,
+			);
+			path = FileViewerIpad;
+			sourceTree = "<group>";
+		};
+		7041EDF9F8AA39B308F9EEF8 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				1EDAE7A6FE52536CCBB61C0E /* FileAccess */,
+				C3AF84A54EA3778EB1CC130D /* Models */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		9DEDEB4613CAC167D554D4ED /* FileViewerIpadUITests */ = {
+			isa = PBXGroup;
+			children = (
+				D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */,
+			);
+			path = FileViewerIpadUITests;
+			sourceTree = "<group>";
+		};
+		AF2DB7C58EA093F0C56AA655 /* Workspace */ = {
+			isa = PBXGroup;
+			children = (
+				C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */,
+				7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */,
+			);
+			path = Workspace;
+			sourceTree = "<group>";
+		};
+		B61EA0072E49FD85173BDF4F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C3AF84A54EA3778EB1CC130D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D2695307A55C4E8652033ED7 = {
+			isa = PBXGroup;
+			children = (
+				232DD26D31F854AD51592322 /* FileViewerIpad */,
+				1AB67DA57E30BBBF2EA5AE76 /* FileViewerIpadTests */,
+				9DEDEB4613CAC167D554D4ED /* FileViewerIpadUITests */,
+				F680B4EB25D822BD895EA0B1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F680B4EB25D822BD895EA0B1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1D2F86176AEFF868B462839 /* FileViewerIpad.app */,
+				ECF9CD813CD7E2181F993C89 /* FileViewerIpadTests.xctest */,
+				1A8E152949AB8838DBB7336B /* FileViewerIpadUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1665D688DE1B3738891A271D /* FileViewerIpadUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BFB8429EF34697209F3A1510 /* Build configuration list for PBXNativeTarget "FileViewerIpadUITests" */;
+			buildPhases = (
+				F54D83F410DF4D6E8232EFC4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				902D8A2089945072A0765783 /* PBXTargetDependency */,
+			);
+			name = FileViewerIpadUITests;
+			packageProductDependencies = (
+			);
+			productName = FileViewerIpadUITests;
+			productReference = 1A8E152949AB8838DBB7336B /* FileViewerIpadUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		A9C5F482DEDDF2BE44B82C67 /* FileViewerIpadTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 348A979EDF764B09404261F5 /* Build configuration list for PBXNativeTarget "FileViewerIpadTests" */;
+			buildPhases = (
+				02493F91C912AAEDA98AD5B8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C4DACB1FC8D494BAAED24BF9 /* PBXTargetDependency */,
+			);
+			name = FileViewerIpadTests;
+			packageProductDependencies = (
+			);
+			productName = FileViewerIpadTests;
+			productReference = ECF9CD813CD7E2181F993C89 /* FileViewerIpadTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		BAD92FF6C188BFBA8296DCB8 /* FileViewerIpad */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 14F236E1EA1E5425A8DD38A1 /* Build configuration list for PBXNativeTarget "FileViewerIpad" */;
+			buildPhases = (
+				1E459411E9E14D4E65134D51 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FileViewerIpad;
+			packageProductDependencies = (
+			);
+			productName = FileViewerIpad;
+			productReference = A1D2F86176AEFF868B462839 /* FileViewerIpad.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		872DD78FDC4FCEB5C9339A60 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					1665D688DE1B3738891A271D = {
+						TestTargetID = BAD92FF6C188BFBA8296DCB8;
+					};
+				};
+			};
+			buildConfigurationList = B86894954D1D2381E932A3DD /* Build configuration list for PBXProject "FileViewerIpad" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D2695307A55C4E8652033ED7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F680B4EB25D822BD895EA0B1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BAD92FF6C188BFBA8296DCB8 /* FileViewerIpad */,
+				A9C5F482DEDDF2BE44B82C67 /* FileViewerIpadTests */,
+				1665D688DE1B3738891A271D /* FileViewerIpadUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		02493F91C912AAEDA98AD5B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9E83274B6BAFD0E30DAC30FE /* DocumentAccessRegistryTests.swift in Sources */,
+				93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1E459411E9E14D4E65134D51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B91E9A27A58356C689AEF675 /* DocumentAccessProtocols.swift in Sources */,
+				3E07789949967AEB3D7AFAEF /* DocumentAccessRegistry.swift in Sources */,
+				9969C3E764FE58C39650B51B /* DocumentModels.swift in Sources */,
+				8730D89267DAE80030C92F3B /* FileViewerIpadApp.swift in Sources */,
+				4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */,
+				DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F54D83F410DF4D6E8232EFC4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D58D7F14BFE2AF289E64AA71 /* FileViewerIpadUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		902D8A2089945072A0765783 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BAD92FF6C188BFBA8296DCB8 /* FileViewerIpad */;
+			targetProxy = 7BE51EF366310B19352CB6A5 /* PBXContainerItemProxy */;
+		};
+		C4DACB1FC8D494BAAED24BF9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BAD92FF6C188BFBA8296DCB8 /* FileViewerIpad */;
+			targetProxy = 3BD1A4A1E52D6AF2FA60BB65 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		212DDF4DE055DD468B61097D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_CFBundleDisplayName = FileViewer;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpad;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6813F26082D52B3E96CCECDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_CFBundleDisplayName = FileViewer;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpad;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6D67C6BD8CB95505F782BC34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpadUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FileViewerIpad;
+			};
+			name = Debug;
+		};
+		83B5D360C348544DF237B7DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		920CFA8E7D3A5EB620317F9E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpadTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FileViewerIpad.app/FileViewerIpad";
+			};
+			name = Release;
+		};
+		CC37309A1C31B9B4C1782D29 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpadTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FileViewerIpad.app/FileViewerIpad";
+			};
+			name = Debug;
+		};
+		E8B3B3E2BB1AC9550A7EA06F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.timetochilltoo.FileViewerIpadUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FileViewerIpad;
+			};
+			name = Release;
+		};
+		FAB4D03ACE52CB8A3AC40AD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		14F236E1EA1E5425A8DD38A1 /* Build configuration list for PBXNativeTarget "FileViewerIpad" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				212DDF4DE055DD468B61097D /* Debug */,
+				6813F26082D52B3E96CCECDC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		348A979EDF764B09404261F5 /* Build configuration list for PBXNativeTarget "FileViewerIpadTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC37309A1C31B9B4C1782D29 /* Debug */,
+				920CFA8E7D3A5EB620317F9E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B86894954D1D2381E932A3DD /* Build configuration list for PBXProject "FileViewerIpad" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAB4D03ACE52CB8A3AC40AD1 /* Debug */,
+				83B5D360C348544DF237B7DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BFB8429EF34697209F3A1510 /* Build configuration list for PBXNativeTarget "FileViewerIpadUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6D67C6BD8CB95505F782BC34 /* Debug */,
+				E8B3B3E2BB1AC9550A7EA06F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 872DD78FDC4FCEB5C9339A60 /* Project object */;
+}
