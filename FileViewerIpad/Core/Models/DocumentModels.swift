@@ -1,8 +1,28 @@
 import Foundation
+import UniformTypeIdentifiers
 
 enum DocumentKind: String, CaseIterable, Codable, Sendable {
     case markdown
     case pdf
+
+    static func detect(from url: URL) throws -> DocumentKind {
+        switch url.pathExtension.lowercased() {
+        case "md", "markdown":
+            return .markdown
+        case "pdf":
+            return .pdf
+        default:
+            throw DocumentAccessError.unsupportedType
+        }
+    }
+
+    static var readableContentTypes: [UTType] {
+        [
+            .pdf,
+            UTType(filenameExtension: "md") ?? .plainText,
+            UTType(filenameExtension: "markdown") ?? .plainText
+        ]
+    }
 }
 
 struct DocumentIdentity: Hashable, Codable, Sendable {
@@ -15,6 +35,16 @@ struct DocumentDescriptor: Identifiable, Hashable, Codable, Sendable {
 
     let identity: DocumentIdentity
     let kind: DocumentKind
+}
+
+enum LoadedDocumentContent: Hashable, Sendable {
+    case markdown(String)
+    case pdf(Data)
+}
+
+struct ResolvedDocument: Hashable, Sendable {
+    let descriptor: DocumentDescriptor
+    let content: LoadedDocumentContent
 }
 
 struct SearchState: Hashable, Codable, Sendable {
@@ -44,14 +74,17 @@ struct DocumentTab: Identifiable, Hashable, Sendable {
     let document: DocumentDescriptor
     var search: SearchState
     var readingPosition: ReadingPosition
+    let content: LoadedDocumentContent
 
     init(
         id: UUID = UUID(),
         document: DocumentDescriptor,
+        content: LoadedDocumentContent,
         search: SearchState = SearchState()
     ) {
         self.id = id
         self.document = document
+        self.content = content
         self.search = search
         self.readingPosition = switch document.kind {
         case .markdown:
@@ -61,4 +94,3 @@ struct DocumentTab: Identifiable, Hashable, Sendable {
         }
     }
 }
-

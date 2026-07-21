@@ -4,17 +4,22 @@ FileViewer is a native iPadOS Markdown and PDF reading workspace. It is being mi
 
 ## Current status
 
-Phase 0 foundation:
+Phase 0 is complete. The first Phase 1 reader slice now includes:
 
 - iPadOS 26.0 minimum deployment target
 - iPad-only application target
 - independent workspace state per window
-- document/tab/search/reading-position value models
-- service protocols for document access, bookmarks, reading-state persistence, and security-scoped access
-- app-level duplicate-document registry
-- unit and UI test targets
+- Markdown/PDF selection through the system file importer
+- coordinated, read-only file loading with balanced security-scoped access
+- persistent iOS bookmark creation
+- stable document identities and duplicate-document protection
+- read-only Markdown blocks with selectable inline formatting
+- PDFKit continuous reading with page and zoom controls
+- deterministic Markdown/PDF UI-test injection seams
+- 13 unit tests and 3 UI tests passing on the dedicated iPad simulator
 
-PDF and Markdown opening/rendering begin in Phase 1.
+Phase 1 still needs recents/bookmark reopening, external URL and drag/drop routing,
+PDF outlines/thumbnails, and richer document loading states.
 
 ## Requirements
 
@@ -51,4 +56,3 @@ xcodebuild \
 ## Reference code policy
 
 The macOS project at `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` is read-only reference material. Never build, format, edit, commit, or generate files in that directory from this project.
-

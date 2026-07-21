@@ -1,7 +1,7 @@
 # FileViewer for iPad — Architecture and Migration Plan
 
 Last updated: 2026-07-21  
-Status: Planning complete; Phase 0 foundation implemented and simulator-tested  
+Status: Planning complete; Phase 0 complete; Phase 1 reader slice in progress
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
 
@@ -508,12 +508,23 @@ the iPadOS 26.5 simulator, and all five seed tests passed.
 
 ### Phase 1 — Secure opening and basic readers
 
-- File importer, URL routing, drag/drop, bookmark creation, recent documents
-- Markdown read-only renderer
-- PDFKit read-only renderer
-- per-scene workspace with tabs
-- basic page navigation and outline/thumbnails
-- clear loading and error states
+- [x] File importer for Markdown and PDF
+- [ ] URL routing and drag/drop
+- [x] iOS bookmark creation and balanced security-scoped reads
+- [ ] bookmark resolution and recent documents
+- [x] Markdown read-only renderer for headings, paragraphs, lists, task lists,
+  quotes, fenced code, tables, and inline Markdown
+- [x] PDFKit read-only continuous renderer
+- [x] per-scene workspace with tabs
+- [x] first/previous/next/last PDF page navigation and zoom controls
+- [ ] PDF outline and thumbnails
+- [x] loading overlay and typed user-facing open errors
+- [x] invalid UTF-8 and malformed PDF rejection
+
+iPad bookmark note: Foundation marks `BookmarkCreationOptions.withSecurityScope`
+unavailable on iOS. The implementation creates `.minimalBookmark` data while the
+document-provider grant is active, then future reopen flows must resolve that
+bookmark before calling `startAccessingSecurityScopedResource()`.
 
 Exit: supported files open from Files and render without writes; two documents retain independent tab state.
 

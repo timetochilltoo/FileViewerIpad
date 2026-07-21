@@ -7,10 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		080C8733A8163ED7D83B227E /* DocumentAccessServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B9E79F6EEFB6C0DD9E072F3 /* DocumentAccessServiceTests.swift */; };
 		3E07789949967AEB3D7AFAEF /* DocumentAccessRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */; };
+		4317B92A6F9943046D567AA5 /* MarkdownReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DABC882C8A3AA4101CADB4 /* MarkdownReaderView.swift */; };
+		48178FE82229793FB44E18DB /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A674B50CB4B59E7DC5668BCB /* AppEnvironment.swift */; };
 		4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */; };
+		4E0FC0415306E2DD10F9A7F8 /* PDFReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A374FC14581B392B70DD25D /* PDFReaderView.swift */; };
+		5F39937F5C19CA827454C657 /* MarkdownBlockParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEEBC8907A477F9EFFC7A65 /* MarkdownBlockParser.swift */; };
+		7575309C0C20B3AC7AB8EB8F /* MarkdownBlockParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101965D9F12975B762008B95 /* MarkdownBlockParserTests.swift */; };
 		8730D89267DAE80030C92F3B /* FileViewerIpadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */; };
 		93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */; };
+		99676E119B65A55168676B8F /* DocumentAccessService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7218A4E52CD2CFD3E9DF0D1 /* DocumentAccessService.swift */; };
 		9969C3E764FE58C39650B51B /* DocumentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */; };
 		9E83274B6BAFD0E30DAC30FE /* DocumentAccessRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */; };
 		B91E9A27A58356C689AEF675 /* DocumentAccessProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */; };
@@ -36,14 +43,21 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		101965D9F12975B762008B95 /* MarkdownBlockParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlockParserTests.swift; sourceTree = "<group>"; };
+		1A374FC14581B392B70DD25D /* PDFReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFReaderView.swift; sourceTree = "<group>"; };
 		1A8E152949AB8838DBB7336B /* FileViewerIpadUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FileViewerIpadUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentModels.swift; sourceTree = "<group>"; };
+		32DABC882C8A3AA4101CADB4 /* MarkdownReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownReaderView.swift; sourceTree = "<group>"; };
 		7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistry.swift; sourceTree = "<group>"; };
 		7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		9B9E79F6EEFB6C0DD9E072F3 /* DocumentAccessServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessServiceTests.swift; sourceTree = "<group>"; };
 		9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistryTests.swift; sourceTree = "<group>"; };
+		9FEEBC8907A477F9EFFC7A65 /* MarkdownBlockParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlockParser.swift; sourceTree = "<group>"; };
 		A1D2F86176AEFF868B462839 /* FileViewerIpad.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FileViewerIpad.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A674B50CB4B59E7DC5668BCB /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessProtocols.swift; sourceTree = "<group>"; };
 		C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
+		C7218A4E52CD2CFD3E9DF0D1 /* DocumentAccessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessService.swift; sourceTree = "<group>"; };
 		D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadUITests.swift; sourceTree = "<group>"; };
 		EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadApp.swift; sourceTree = "<group>"; };
 		ECF9CD813CD7E2181F993C89 /* FileViewerIpadTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FileViewerIpadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -55,6 +69,8 @@
 			isa = PBXGroup;
 			children = (
 				9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */,
+				9B9E79F6EEFB6C0DD9E072F3 /* DocumentAccessServiceTests.swift */,
+				101965D9F12975B762008B95 /* MarkdownBlockParserTests.swift */,
 				F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */,
 			);
 			path = FileViewerIpadTests;
@@ -65,6 +81,7 @@
 			children = (
 				AA53BDECCFB8D3E282C27199 /* DocumentAccessProtocols.swift */,
 				7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */,
+				C7218A4E52CD2CFD3E9DF0D1 /* DocumentAccessService.swift */,
 			);
 			path = FileAccess;
 			sourceTree = "<group>";
@@ -72,6 +89,8 @@
 		215A0F3B2DEDC30E16E8B82E /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				A2653F97458ABD0778E34D74 /* Markdown */,
+				C5A806239A72840DBA9B8629 /* PDF */,
 				AF2DB7C58EA093F0C56AA655 /* Workspace */,
 			);
 			path = Features;
@@ -104,6 +123,15 @@
 			path = FileViewerIpadUITests;
 			sourceTree = "<group>";
 		};
+		A2653F97458ABD0778E34D74 /* Markdown */ = {
+			isa = PBXGroup;
+			children = (
+				9FEEBC8907A477F9EFFC7A65 /* MarkdownBlockParser.swift */,
+				32DABC882C8A3AA4101CADB4 /* MarkdownReaderView.swift */,
+			);
+			path = Markdown;
+			sourceTree = "<group>";
+		};
 		AF2DB7C58EA093F0C56AA655 /* Workspace */ = {
 			isa = PBXGroup;
 			children = (
@@ -116,6 +144,7 @@
 		B61EA0072E49FD85173BDF4F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				A674B50CB4B59E7DC5668BCB /* AppEnvironment.swift */,
 				EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */,
 			);
 			path = App;
@@ -127,6 +156,14 @@
 				2A1383D52EBD01FA01FB2980 /* DocumentModels.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		C5A806239A72840DBA9B8629 /* PDF */ = {
+			isa = PBXGroup;
+			children = (
+				1A374FC14581B392B70DD25D /* PDFReaderView.swift */,
+			);
+			path = PDF;
 			sourceTree = "<group>";
 		};
 		D2695307A55C4E8652033ED7 = {
@@ -246,6 +283,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E83274B6BAFD0E30DAC30FE /* DocumentAccessRegistryTests.swift in Sources */,
+				080C8733A8163ED7D83B227E /* DocumentAccessServiceTests.swift in Sources */,
+				7575309C0C20B3AC7AB8EB8F /* MarkdownBlockParserTests.swift in Sources */,
 				93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -254,10 +293,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				48178FE82229793FB44E18DB /* AppEnvironment.swift in Sources */,
 				B91E9A27A58356C689AEF675 /* DocumentAccessProtocols.swift in Sources */,
 				3E07789949967AEB3D7AFAEF /* DocumentAccessRegistry.swift in Sources */,
+				99676E119B65A55168676B8F /* DocumentAccessService.swift in Sources */,
 				9969C3E764FE58C39650B51B /* DocumentModels.swift in Sources */,
 				8730D89267DAE80030C92F3B /* FileViewerIpadApp.swift in Sources */,
+				5F39937F5C19CA827454C657 /* MarkdownBlockParser.swift in Sources */,
+				4317B92A6F9943046D567AA5 /* MarkdownReaderView.swift in Sources */,
+				4E0FC0415306E2DD10F9A7F8 /* PDFReaderView.swift in Sources */,
 				4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */,
 				DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */,
 			);

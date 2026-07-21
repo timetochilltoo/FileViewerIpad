@@ -1,7 +1,7 @@
 # FileViewer for iPad — Handoff
 
 Last updated: 2026-07-21  
-Current phase: Phase 0 foundation complete and simulator-tested; Phase 1 is next  
+Current phase: Phase 0 complete; Phase 1A secure opening/basic readers implemented and tested
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Intended GitHub repository: `https://github.com/timetochilltoo/FileViewerIpad.git`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
@@ -24,9 +24,9 @@ The priority order supplied by the user is:
 10. later: PDF forms
 11. later: AI integration
 
-The user subsequently approved implementation. Phase 0 is complete: the iPad-only
-Xcode project, platform-neutral foundation, app shell, unit tests, and UI test exist
-and pass on the dedicated iPad simulator.
+The user subsequently approved implementation. Phase 0 is complete. The first
+Phase 1 slice now opens Markdown/PDF files from the system picker, reads them without
+writing, renders both formats, and passes unit, UI, and simulator visual checks.
 
 ## 2. Non-negotiable reference rule
 
@@ -85,21 +85,31 @@ That document contains:
 
 Future agents must read the architecture plan and this handoff before implementation.
 
-Phase 0 files now present:
+Important implementation files now present:
 
 ```text
 project.yml
 FileViewerIpad.xcodeproj/
 FileViewerIpad/
-├── App/FileViewerIpadApp.swift
-├── Core/FileAccess/DocumentAccessProtocols.swift
-├── Core/FileAccess/DocumentAccessRegistry.swift
+├── App/
+│   ├── AppEnvironment.swift
+│   └── FileViewerIpadApp.swift
+├── Core/FileAccess/
+│   ├── DocumentAccessProtocols.swift
+│   ├── DocumentAccessRegistry.swift
+│   └── DocumentAccessService.swift
 ├── Core/Models/DocumentModels.swift
+├── Features/Markdown/
+│   ├── MarkdownBlockParser.swift
+│   └── MarkdownReaderView.swift
+├── Features/PDF/PDFReaderView.swift
 └── Features/Workspace/
     ├── WorkspaceModel.swift
     └── WorkspaceView.swift
 FileViewerIpadTests/
+├── DocumentAccessServiceTests.swift
 ├── DocumentAccessRegistryTests.swift
+├── MarkdownBlockParserTests.swift
 └── WorkspaceModelTests.swift
 FileViewerIpadUITests/
 └── FileViewerIpadUITests.swift
@@ -220,7 +230,8 @@ Simulator readiness verified on 2026-07-21:
 - Device UDID: `174A3DF4-AE79-42FF-A063-90ED2887FBD7`
 - The device was booted automatically by the successful test run.
 
-The simulator prerequisite and Phase 0 verification are satisfied.
+The simulator prerequisite, Phase 0 verification, and Phase 1A reader verification
+are satisfied.
 
 GitHub authentication was verified:
 
@@ -339,11 +350,26 @@ Future AI:
 
 ### Phase 1: secure opening and basic readers
 
-- file importer, URL open, drag/drop, recents, bookmarks
-- read-only Markdown rendering
-- read-only PDFKit rendering
-- tabs, page navigation, outlines, thumbnails
-- loading and error UI
+- [x] system file importer for `.md`, `.markdown`, and `.pdf`
+- [x] validate extension before reading
+- [x] balance every successful security-scope start
+- [x] coordinate reads and keep source files read-only
+- [x] create iOS `.minimalBookmark` data while access is granted
+- [x] derive a stable hashed identity from resource ID, bookmark, or final fallback
+- [x] decode Markdown strictly as UTF-8
+- [x] reject malformed PDF data before creating a tab
+- [x] render Markdown headings, paragraphs, lists, tasks, quotes, code, tables, and
+  inline formatting as selectable content
+- [x] render PDFs continuously with PDFKit
+- [x] first/previous/next/last page and zoom in/out controls
+- [x] loading overlay and typed open-error alert
+- [x] close tabs by swipe/delete and release their registry claims
+- [x] deterministic debug-only Markdown/PDF injection for UI tests
+- [ ] resolve bookmarks for reopen and add recents
+- [ ] external URL and drag/drop routing
+- [ ] activate the existing scene when a cross-window duplicate is found; the actor
+  currently returns its `DocumentLocation`, but scene activation is Phase 2 work
+- [ ] PDF outlines and thumbnails
 
 ### Phase 2: windows, search, restoration
 
@@ -442,21 +468,31 @@ Open:
 
 Neither blocks simulator-based Phase 1 work.
 
+Known Phase 1 limitations:
+
+- The file importer is the only production opening path in this slice.
+- Bookmarks are saved but are not yet resolved through a Recents interface.
+- Cross-window duplicate detection returns the existing location, but UI scene
+  activation is not implemented yet.
+- Markdown search/restoration and PDF search/restoration belong to Phase 2.
+- PDF outlines, thumbnails, fit-page, fit-width, and page-number entry remain.
+- The app has not been signed or run on a physical iPad.
+
 ## 11. Exact next steps for the next agent
 
 1. Read this file and `docs/IPAD_ARCHITECTURE_AND_MIGRATION_PLAN.md`.
 2. Inspect `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` with read-only `git status`. The five documentation modifications listed in Section 2 are expected until the macOS agent commits them; do not clean or modify them.
 3. Check `git status` and preserve any user/agent changes.
 4. Regenerate with `xcodegen generate` only when `project.yml` changes.
-5. Start Phase 1 with secure document resolution/bookmark lifetimes and deterministic
-   fakes/tests; then add read-only Markdown and PDF readers in small verified units.
-6. Integrate opening through a file importer and external URL seam without allowing
-   multiple scenes to consume one request.
-7. Connect `WorkspaceModel` and `DocumentAccessRegistry`; an ordinary duplicate open
-   must activate the existing tab/window.
-8. Add/update this handoff after every meaningful implementation unit.
-9. Run the full simulator test command before committing.
-10. Commit and push coherent verified units under the configured Git identity.
+5. Continue Phase 1 by resolving stored bookmarks and adding capped recent documents.
+6. Add external URL and drag/drop through a one-shot request router; do not attach a
+   global URL notification independently to every scene.
+7. Add scene activation for `.activateExisting(DocumentLocation)`.
+8. Add PDF outline and thumbnail navigation with defensive page-index validation.
+9. Add manual Files-picker acceptance checks with real Markdown and PDF fixtures.
+10. Add/update this handoff after every meaningful implementation unit.
+11. Run the full simulator test command before committing.
+12. Commit and push coherent verified units under the configured Git identity.
 
 Do not begin with PDF annotations, Markdown editing, forms, or AI. Do not copy the macOS project wholesale.
 
@@ -473,15 +509,22 @@ xcodebuild \
   test
 ```
 
-Result on 2026-07-21:
+Latest result on 2026-07-21:
 
 - `DocumentAccessRegistryTests`: 2 passed
-- `WorkspaceModelTests`: 2 passed
-- `FileViewerIpadUITests`: 1 passed
-- total: 5 passed, 0 failed
+- `DocumentAccessServiceTests`: 5 passed
+- `MarkdownBlockParserTests`: 2 passed
+- `WorkspaceModelTests`: 4 passed
+- `FileViewerIpadUITests`: 3 passed
+- total: 16 passed, 0 failed
 - Xcode result: `** TEST SUCCEEDED **`
 - temporary result bundle:
-  `/private/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.07.21_02-15-52-+0800.xcresult`
+  `/private/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.07.21_09-19-56-+0800.xcresult`
+
+The two UI fixture paths were also installed and visually inspected on
+`FileViewer Test iPad`: the PDF page and bottom controls fit correctly in the
+regular-width split view, and the Markdown defect found during the first visual
+check (collapsed block boundaries) was corrected with `MarkdownBlockParser`.
 
 Non-blocking simulator output included an Apple runtime duplicate accessibility-class
 warning and an LLDB version-store warning. Neither affected launch or test results.
