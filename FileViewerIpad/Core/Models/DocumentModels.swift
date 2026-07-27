@@ -47,6 +47,14 @@ struct ResolvedDocument: Hashable, Sendable {
     let content: LoadedDocumentContent
 }
 
+struct RecentDocument: Identifiable, Hashable, Codable, Sendable {
+    var id: DocumentIdentity { identity }
+
+    let identity: DocumentIdentity
+    let kind: DocumentKind
+    let lastOpenedAt: Date
+}
+
 struct SearchState: Hashable, Codable, Sendable {
     var query = ""
     var currentMatchIndex = 0

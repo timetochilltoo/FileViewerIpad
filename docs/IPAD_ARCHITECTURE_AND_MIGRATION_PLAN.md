@@ -1,7 +1,7 @@
 # FileViewer for iPad — Architecture and Migration Plan
 
-Last updated: 2026-07-21  
-Status: Planning complete; Phase 0 complete; Phase 1 reader slice in progress
+Last updated: 2026-07-27
+Status: Planning complete; Phase 0 complete; Phase 1 reader features verified except cross-window scene activation
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
 
@@ -509,28 +509,32 @@ the iPadOS 26.5 simulator, and all five seed tests passed.
 ### Phase 1 — Secure opening and basic readers
 
 - [x] File importer for Markdown and PDF
-- [ ] URL routing and drag/drop
+- [x] registered external URL routing with duplicate-delivery suppression and drag/drop
 - [x] iOS bookmark creation and balanced security-scoped reads
-- [ ] bookmark resolution and recent documents
+- [x] bookmark resolution and capped/deduplicated recent documents
 - [x] Markdown read-only renderer for headings, paragraphs, lists, task lists,
   quotes, fenced code, tables, and inline Markdown
 - [x] PDFKit read-only continuous renderer
 - [x] per-scene workspace with tabs
 - [x] first/previous/next/last PDF page navigation and zoom controls
-- [ ] PDF outline and thumbnails
+- [x] PDF outline and thumbnails with defensive destination validation
 - [x] loading overlay and typed user-facing open errors
 - [x] invalid UTF-8 and malformed PDF rejection
 
 iPad bookmark note: Foundation marks `BookmarkCreationOptions.withSecurityScope`
 unavailable on iOS. The implementation creates `.minimalBookmark` data while the
-document-provider grant is active, then future reopen flows must resolve that
-bookmark before calling `startAccessingSecurityScopedResource()`.
+document-provider grant is active. Recent-document reopen resolves that bookmark
+before calling `startAccessingSecurityScopedResource()` and refreshes stale data.
+
+Remaining Phase 1 boundary: the duplicate registry returns the owning
+`DocumentLocation`, but bringing that existing scene forward requires the Phase 2
+scene-registration layer.
 
 Exit: supported files open from Files and render without writes; two documents retain independent tab state.
 
 ### Phase 2 — Multiple windows, search, and restoration
 
-- one-shot external-open router
+- scene registration and activation for duplicate opens
 - new-window/open-in-new-window flows
 - Markdown and PDF search with explicit navigation requests
 - page/zoom and visible-character persistence

@@ -44,17 +44,69 @@ actor UserDefaultsBookmarkStore: BookmarkStoring {
 
 struct DocumentAccessService: DocumentAccessServicing {
     private let bookmarks: any BookmarkStoring
+    private let recents: any RecentDocumentStoring
     private let securityScope: any SecurityScopedAccessing
 
     init(
         bookmarks: any BookmarkStoring,
+        recents: any RecentDocumentStoring,
         securityScope: any SecurityScopedAccessing = SystemSecurityScopedAccessor()
     ) {
         self.bookmarks = bookmarks
+        self.recents = recents
         self.securityScope = securityScope
     }
 
     func resolveDocument(at url: URL) async throws -> ResolvedDocument {
+        try await resolveDocument(at: url, preferredIdentity: nil)
+    }
+
+    func resolveDocument(for recent: RecentDocument) async throws -> ResolvedDocument {
+        guard let bookmarkData = try await bookmarks.bookmarkData(
+            for: recent.identity
+        ) else {
+            throw DocumentAccessError.staleBookmark
+        }
+
+        var isStale = false
+        let url: URL
+        do {
+            url = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [.withoutUI],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+        } catch {
+            throw DocumentAccessError.staleBookmark
+        }
+
+        let resolved = try await resolveDocument(
+            at: url,
+            preferredIdentity: recent.identity
+        )
+
+        if isStale {
+            let refreshedData = try? url.bookmarkData(
+                options: .minimalBookmark,
+                includingResourceValuesForKeys: [.fileResourceIdentifierKey],
+                relativeTo: nil
+            )
+            if let refreshedData {
+                try await bookmarks.saveBookmarkData(
+                    refreshedData,
+                    for: resolved.descriptor.identity
+                )
+            }
+        }
+
+        return resolved
+    }
+
+    private func resolveDocument(
+        at url: URL,
+        preferredIdentity: DocumentIdentity?
+    ) async throws -> ResolvedDocument {
         let kind = try DocumentKind.detect(from: url)
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw DocumentAccessError.missingFile
@@ -76,10 +128,12 @@ struct DocumentAccessService: DocumentAccessServicing {
             includingResourceValuesForKeys: [.fileResourceIdentifierKey],
             relativeTo: nil
         )
-        let identity = documentIdentity(
-            for: url,
-            bookmarkData: bookmarkData
-        )
+        let identity = preferredIdentity.map {
+            DocumentIdentity(
+                persistentID: $0.persistentID,
+                displayName: url.lastPathComponent
+            )
+        } ?? documentIdentity(for: url, bookmarkData: bookmarkData)
 
         let content: LoadedDocumentContent
         switch kind {
@@ -100,10 +154,18 @@ struct DocumentAccessService: DocumentAccessServicing {
             try await bookmarks.saveBookmarkData(bookmarkData, for: identity)
         }
 
-        return ResolvedDocument(
+        let resolved = ResolvedDocument(
             descriptor: DocumentDescriptor(identity: identity, kind: kind),
             content: content
         )
+        await recents.record(
+            RecentDocument(
+                identity: identity,
+                kind: kind,
+                lastOpenedAt: Date()
+            )
+        )
+        return resolved
     }
 
     private func coordinatedRead(from url: URL) throws -> Data {

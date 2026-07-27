@@ -20,13 +20,29 @@ targets:
     platform: iOS
     sources:
       - path: FileViewerIpad
+    info:
+      path: FileViewerIpad/Info.plist
+      properties:
+        CFBundleDisplayName: FileViewer
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: PDF Document
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - com.adobe.pdf
+          - CFBundleTypeName: Markdown Document
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - net.daringfireball.markdown
+        LSSupportsOpeningDocumentsInPlace: true
+        UILaunchScreen: {}
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.timetochilltoo.FileViewerIpad
-        INFOPLIST_KEY_CFBundleDisplayName: FileViewer
-        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        TARGETED_DEVICE_FAMILY: "2"
 
   FileViewerIpadTests:
     type: bundle.unit-test

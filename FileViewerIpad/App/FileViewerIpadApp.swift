@@ -48,8 +48,11 @@ private struct WorkspaceSceneRoot: View {
                 bounds: CGRect(x: 0, y: 0, width: 612, height: 792)
             )
             let data = renderer.pdfData { context in
-                context.beginPage()
-                "Phase 1 PDF".draw(at: CGPoint(x: 72, y: 72))
+                for page in 1...2 {
+                    context.beginPage()
+                    "Phase 1 PDF — Page \(page)"
+                        .draw(at: CGPoint(x: 72, y: 72))
+                }
             }
             model.open(
                 ResolvedDocument(
@@ -66,7 +69,9 @@ private struct WorkspaceSceneRoot: View {
         WorkspaceView(
             model: model,
             documentAccess: environment.documentAccess,
-            documentRegistry: environment.documentRegistry
+            documentRegistry: environment.documentRegistry,
+            recentStore: environment.recentDocuments,
+            openRequestRouter: environment.openRequestRouter
         )
     }
 }

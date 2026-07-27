@@ -28,5 +28,12 @@ final class FileViewerIpadUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Next Page"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Zoom In"].exists)
+        let navigatorButton = app.buttons["PDF Navigator"]
+        XCTAssertTrue(navigatorButton.exists)
+
+        navigatorButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Page 1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Outline"].exists)
     }
 }

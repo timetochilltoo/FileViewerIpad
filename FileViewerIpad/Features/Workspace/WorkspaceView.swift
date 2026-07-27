@@ -4,6 +4,8 @@ struct WorkspaceView: View {
     @Bindable var model: WorkspaceModel
     let documentAccess: any DocumentAccessServicing
     let documentRegistry: DocumentAccessRegistry
+    let recentStore: any RecentDocumentStoring
+    let openRequestRouter: OpenRequestRouter
 
     @State private var isShowingImporter = false
 
@@ -35,6 +37,39 @@ struct WorkspaceView: View {
                                     await model.closeTab(
                                         tabID,
                                         registry: documentRegistry
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !model.recentDocuments.isEmpty {
+                    Section("Recent Documents") {
+                        ForEach(model.recentDocuments) { recent in
+                            Button {
+                                open(recent)
+                            } label: {
+                                Label(
+                                    recent.identity.displayName,
+                                    systemImage: recent.kind == .pdf
+                                        ? "doc.richtext"
+                                        : "doc.plaintext"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .onDelete { offsets in
+                            let identities = offsets.compactMap { index in
+                                model.recentDocuments.indices.contains(index)
+                                    ? model.recentDocuments[index].identity
+                                    : nil
+                            }
+                            Task {
+                                for identity in identities {
+                                    await model.removeRecent(
+                                        identity,
+                                        using: recentStore
                                     )
                                 }
                             }
@@ -80,13 +115,7 @@ struct WorkspaceView: View {
             switch result {
             case let .success(urls):
                 guard let url = urls.first else { return }
-                Task {
-                    await model.openDocument(
-                        at: url,
-                        using: documentAccess,
-                        registry: documentRegistry
-                    )
-                }
+                open(url)
             case let .failure(error):
                 model.presentOpenError(error)
             }
@@ -108,6 +137,20 @@ struct WorkspaceView: View {
         } message: {
             Text(model.presentedError ?? "")
         }
+        .task {
+            await model.refreshRecents(using: recentStore)
+        }
+        .onOpenURL { url in
+            Task {
+                guard await openRequestRouter.claim(url) else { return }
+                await openAndRefresh(url)
+            }
+        }
+        .dropDestination(for: URL.self) { urls, _ in
+            guard let url = urls.first else { return false }
+            open(url)
+            return true
+        }
     }
 
     @ViewBuilder
@@ -119,15 +162,49 @@ struct WorkspaceView: View {
             PDFReaderView(data: data)
         }
     }
+
+    private func open(_ url: URL) {
+        Task {
+            await openAndRefresh(url)
+        }
+    }
+
+    private func open(_ recent: RecentDocument) {
+        Task {
+            _ = await model.openRecentDocument(
+                recent,
+                using: documentAccess,
+                registry: documentRegistry
+            )
+            await model.refreshRecents(using: recentStore)
+        }
+    }
+
+    private func openAndRefresh(_ url: URL) async {
+        _ = await model.openDocument(
+            at: url,
+            using: documentAccess,
+            registry: documentRegistry
+        )
+        await model.refreshRecents(using: recentStore)
+    }
 }
 
 #Preview {
     let bookmarks = UserDefaultsBookmarkStore(
         defaults: UserDefaults(suiteName: "WorkspaceViewPreview")!
     )
+    let recents = UserDefaultsRecentDocumentStore(
+        defaults: UserDefaults(suiteName: "WorkspaceViewPreview")!
+    )
     WorkspaceView(
         model: WorkspaceModel(),
-        documentAccess: DocumentAccessService(bookmarks: bookmarks),
-        documentRegistry: DocumentAccessRegistry()
+        documentAccess: DocumentAccessService(
+            bookmarks: bookmarks,
+            recents: recents
+        ),
+        documentRegistry: DocumentAccessRegistry(),
+        recentStore: recents,
+        openRequestRouter: OpenRequestRouter()
     )
 }

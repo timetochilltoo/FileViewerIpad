@@ -4,6 +4,7 @@ enum DocumentAccessError: LocalizedError, Equatable, Sendable {
     case unsupportedType
     case permissionDenied
     case missingFile
+    case staleBookmark
     case unreadableDocument
     case invalidTextEncoding
     case invalidPDF
@@ -16,6 +17,8 @@ enum DocumentAccessError: LocalizedError, Equatable, Sendable {
             "FileViewer does not have permission to read this document."
         case .missingFile:
             "The document could not be found."
+        case .staleBookmark:
+            "FileViewer no longer has access to this recent document. Open it again from Files."
         case .unreadableDocument:
             "The document could not be read."
         case .invalidTextEncoding:
@@ -28,6 +31,7 @@ enum DocumentAccessError: LocalizedError, Equatable, Sendable {
 
 protocol DocumentAccessServicing: Sendable {
     func resolveDocument(at url: URL) async throws -> ResolvedDocument
+    func resolveDocument(for recent: RecentDocument) async throws -> ResolvedDocument
 }
 
 protocol BookmarkStoring: Sendable {
@@ -42,6 +46,12 @@ protocol ReadingStateStoring: Sendable {
         _ position: ReadingPosition,
         for identity: DocumentIdentity
     ) async throws
+}
+
+protocol RecentDocumentStoring: Sendable {
+    func recentDocuments() async -> [RecentDocument]
+    func record(_ document: RecentDocument) async
+    func remove(identity: DocumentIdentity) async
 }
 
 protocol SecurityScopedAccessing: Sendable {

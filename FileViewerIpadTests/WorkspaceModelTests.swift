@@ -113,4 +113,8 @@ private struct StubDocumentAccessService: DocumentAccessServicing {
     func resolveDocument(at url: URL) async throws -> ResolvedDocument {
         document
     }
+
+    func resolveDocument(for recent: RecentDocument) async throws -> ResolvedDocument {
+        document
+    }
 }

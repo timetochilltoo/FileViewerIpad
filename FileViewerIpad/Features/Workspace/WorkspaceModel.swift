@@ -15,6 +15,7 @@ final class WorkspaceModel {
     var selectedTabID: DocumentTab.ID?
     private(set) var isOpeningDocument = false
     private(set) var presentedError: String?
+    private(set) var recentDocuments: [RecentDocument] = []
 
     init(
         id: WorkspaceID = WorkspaceID(),
@@ -61,31 +62,7 @@ final class WorkspaceModel {
 
         do {
             let resolvedDocument = try await accessService.resolveDocument(at: url)
-
-            if let existing = tabs.first(where: {
-                $0.document.identity == resolvedDocument.descriptor.identity
-            }) {
-                selectedTabID = existing.id
-                return .selectedExisting(existing.id)
-            }
-
-            let tab = DocumentTab(
-                document: resolvedDocument.descriptor,
-                content: resolvedDocument.content
-            )
-            let location = DocumentLocation(workspaceID: id, tabID: tab.id)
-
-            switch await registry.claim(
-                resolvedDocument.descriptor.identity,
-                at: location
-            ) {
-            case .claimed:
-                tabs.append(tab)
-                selectedTabID = tab.id
-                return .opened(tab.id)
-            case let .activateExisting(existingLocation):
-                return .activateExisting(existingLocation)
-            }
+            return await accept(resolvedDocument, registry: registry)
         } catch is CancellationError {
             return nil
         } catch {
@@ -93,6 +70,39 @@ final class WorkspaceModel {
                 ?? "The document could not be opened."
             return nil
         }
+    }
+
+    @discardableResult
+    func openRecentDocument(
+        _ recent: RecentDocument,
+        using accessService: any DocumentAccessServicing,
+        registry: DocumentAccessRegistry
+    ) async -> WorkspaceOpenResult? {
+        isOpeningDocument = true
+        presentedError = nil
+        defer { isOpeningDocument = false }
+
+        do {
+            let resolvedDocument = try await accessService.resolveDocument(for: recent)
+            return await accept(resolvedDocument, registry: registry)
+        } catch is CancellationError {
+            return nil
+        } catch {
+            presentOpenError(error)
+            return nil
+        }
+    }
+
+    func refreshRecents(using store: any RecentDocumentStoring) async {
+        recentDocuments = await store.recentDocuments()
+    }
+
+    func removeRecent(
+        _ identity: DocumentIdentity,
+        using store: any RecentDocumentStoring
+    ) async {
+        await store.remove(identity: identity)
+        await refreshRecents(using: store)
     }
 
     func dismissError() {
@@ -126,6 +136,36 @@ final class WorkspaceModel {
             selectedTabID = tabs[index].id
         } else {
             selectedTabID = tabs.last?.id
+        }
+    }
+
+    private func accept(
+        _ resolvedDocument: ResolvedDocument,
+        registry: DocumentAccessRegistry
+    ) async -> WorkspaceOpenResult {
+        if let existing = tabs.first(where: {
+            $0.document.identity == resolvedDocument.descriptor.identity
+        }) {
+            selectedTabID = existing.id
+            return .selectedExisting(existing.id)
+        }
+
+        let tab = DocumentTab(
+            document: resolvedDocument.descriptor,
+            content: resolvedDocument.content
+        )
+        let location = DocumentLocation(workspaceID: id, tabID: tab.id)
+
+        switch await registry.claim(
+            resolvedDocument.descriptor.identity,
+            at: location
+        ) {
+        case .claimed:
+            tabs.append(tab)
+            selectedTabID = tab.id
+            return .opened(tab.id)
+        case let .activateExisting(existingLocation):
+            return .activateExisting(existingLocation)
         }
     }
 }

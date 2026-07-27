@@ -8,6 +8,7 @@ final class DocumentAccessServiceTests: XCTestCase {
         let bookmarks = InMemoryBookmarkStore()
         let service = DocumentAccessService(
             bookmarks: bookmarks,
+            recents: InMemoryRecentDocumentStore(),
             securityScope: scope
         )
         let url = temporaryURL(extension: "md")
@@ -27,6 +28,7 @@ final class DocumentAccessServiceTests: XCTestCase {
         let scope = RecordingSecurityScope(startResult: false)
         let service = DocumentAccessService(
             bookmarks: InMemoryBookmarkStore(),
+            recents: InMemoryRecentDocumentStore(),
             securityScope: scope
         )
         let url = temporaryURL(extension: "markdown")
@@ -43,6 +45,7 @@ final class DocumentAccessServiceTests: XCTestCase {
         let scope = RecordingSecurityScope(startResult: true)
         let service = DocumentAccessService(
             bookmarks: InMemoryBookmarkStore(),
+            recents: InMemoryRecentDocumentStore(),
             securityScope: scope
         )
         let url = temporaryURL(extension: "txt")
@@ -59,6 +62,7 @@ final class DocumentAccessServiceTests: XCTestCase {
         let scope = RecordingSecurityScope(startResult: true)
         let service = DocumentAccessService(
             bookmarks: InMemoryBookmarkStore(),
+            recents: InMemoryRecentDocumentStore(),
             securityScope: scope
         )
         let url = temporaryURL(extension: "md")
@@ -78,6 +82,7 @@ final class DocumentAccessServiceTests: XCTestCase {
         let scope = RecordingSecurityScope(startResult: true)
         let service = DocumentAccessService(
             bookmarks: InMemoryBookmarkStore(),
+            recents: InMemoryRecentDocumentStore(),
             securityScope: scope
         )
         let url = temporaryURL(extension: "pdf")
@@ -91,6 +96,68 @@ final class DocumentAccessServiceTests: XCTestCase {
         }
         XCTAssertEqual(scope.startedURLs, [url])
         XCTAssertEqual(scope.stoppedURLs, [url])
+    }
+
+    func testReopensRecentDocumentFromBookmark() async throws {
+        let url = temporaryURL(extension: "md")
+        try Data("# Reopened".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let identity = DocumentIdentity(
+            persistentID: "saved-identity",
+            displayName: "Previous Name.md"
+        )
+        let bookmarks = InMemoryBookmarkStore()
+        let bookmarkData = try url.bookmarkData(
+            options: .minimalBookmark,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        try await bookmarks.saveBookmarkData(bookmarkData, for: identity)
+        let recents = InMemoryRecentDocumentStore()
+        let scope = RecordingSecurityScope(startResult: true)
+        let service = DocumentAccessService(
+            bookmarks: bookmarks,
+            recents: recents,
+            securityScope: scope
+        )
+
+        let document = try await service.resolveDocument(
+            for: RecentDocument(
+                identity: identity,
+                kind: .markdown,
+                lastOpenedAt: .distantPast
+            )
+        )
+
+        XCTAssertEqual(document.descriptor.identity.persistentID, "saved-identity")
+        XCTAssertEqual(document.descriptor.identity.displayName, url.lastPathComponent)
+        XCTAssertEqual(document.content, .markdown("# Reopened"))
+        XCTAssertEqual(scope.startedURLs, [url])
+        XCTAssertEqual(scope.stoppedURLs, [url])
+        let storedRecents = await recents.recentDocuments()
+        XCTAssertEqual(storedRecents.first?.identity, document.descriptor.identity)
+    }
+
+    func testRecentWithoutBookmarkReportsStaleAccess() async {
+        let service = DocumentAccessService(
+            bookmarks: InMemoryBookmarkStore(),
+            recents: InMemoryRecentDocumentStore()
+        )
+        let recent = RecentDocument(
+            identity: DocumentIdentity(
+                persistentID: "missing-bookmark",
+                displayName: "Missing.md"
+            ),
+            kind: .markdown,
+            lastOpenedAt: .now
+        )
+
+        await XCTAssertThrowsErrorAsync(
+            try await service.resolveDocument(for: recent)
+        ) { error in
+            XCTAssertEqual(error as? DocumentAccessError, .staleBookmark)
+        }
     }
 
     private func temporaryURL(extension pathExtension: String) -> URL {
@@ -145,6 +212,23 @@ private actor InMemoryBookmarkStore: BookmarkStoring {
 
     func removeBookmark(for identity: DocumentIdentity) {
         values.removeValue(forKey: identity)
+    }
+}
+
+private actor InMemoryRecentDocumentStore: RecentDocumentStoring {
+    private var values: [RecentDocument] = []
+
+    func recentDocuments() -> [RecentDocument] {
+        values
+    }
+
+    func record(_ document: RecentDocument) {
+        values.removeAll { $0.identity == document.identity }
+        values.insert(document, at: 0)
+    }
+
+    func remove(identity: DocumentIdentity) {
+        values.removeAll { $0.identity == identity }
     }
 }
 
