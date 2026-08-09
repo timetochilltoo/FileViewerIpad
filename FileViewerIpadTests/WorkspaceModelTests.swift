@@ -85,21 +85,83 @@ final class WorkspaceModelTests: XCTestCase {
         XCTAssertNil(location)
     }
 
+    @MainActor
+    func testSearchCountsAndNavigatesMatchesPerSelectedTab() throws {
+        let workspace = WorkspaceModel()
+        let document = makeDocument(
+            id: "searchable",
+            name: "Searchable.md",
+            kind: .markdown,
+            content: .markdown("Needle one\n\nAnother NEEDLE")
+        )
+        workspace.open(document)
+
+        workspace.updateSearchQuery("needle")
+
+        XCTAssertEqual(workspace.selectedSearchQuery, "needle")
+        XCTAssertEqual(workspace.searchStatusText, "1 of 2")
+        workspace.nextSearchMatch()
+        XCTAssertEqual(workspace.searchStatusText, "2 of 2")
+        workspace.nextSearchMatch()
+        XCTAssertEqual(workspace.searchStatusText, "1 of 2")
+        workspace.previousSearchMatch()
+        XCTAssertEqual(workspace.searchStatusText, "2 of 2")
+
+        workspace.updateSearchQuery("missing")
+        XCTAssertEqual(workspace.searchStatusText, "No matches")
+        workspace.updateSearchQuery("")
+        XCTAssertNil(workspace.searchStatusText)
+    }
+
+    @MainActor
+    func testReadingPositionCanBeRestoredIntoOpenedTab() async throws {
+        let suiteName = "WorkspaceModelTests.\(UUID().uuidString)"
+        let store = UserDefaultsReadingStateStore(suiteName: suiteName)
+        defer {
+            UserDefaults(suiteName: suiteName)?
+                .removePersistentDomain(forName: suiteName)
+        }
+        let workspace = WorkspaceModel()
+        let document = makeDocument(
+            id: "restorable",
+            name: "Restorable.pdf",
+            kind: .pdf
+        )
+        guard case let .opened(tabID) = workspace.open(document) else {
+            XCTFail("Expected the document to open in a new tab")
+            return
+        }
+        let position = ReadingPosition.pdf(PDFReadingPosition(page: 3, scale: 1.5))
+
+        try await store.saveReadingPosition(position, for: document.descriptor.identity)
+        await workspace.restoreReadingPosition(for: tabID, using: store)
+
+        XCTAssertEqual(workspace.tabs.first?.readingPosition, position)
+    }
+
     private func makeDocument(
         id: String,
         name: String,
         kind: DocumentKind
     ) -> ResolvedDocument {
+        makeDocument(
+            id: id,
+            name: name,
+            kind: kind,
+            content: kind == .markdown ? .markdown("# Test") : .pdf(Data())
+        )
+    }
+
+    private func makeDocument(
+        id: String,
+        name: String,
+        kind: DocumentKind,
+        content: LoadedDocumentContent
+    ) -> ResolvedDocument {
         let descriptor = DocumentDescriptor(
             identity: DocumentIdentity(persistentID: id, displayName: name),
             kind: kind
         )
-        let content: LoadedDocumentContent = switch kind {
-        case .markdown:
-            .markdown("# Test")
-        case .pdf:
-            .pdf(Data())
-        }
         return ResolvedDocument(
             descriptor: descriptor,
             content: content

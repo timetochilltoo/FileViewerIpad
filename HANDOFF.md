@@ -1,7 +1,7 @@
 # FileViewer for iPad — Handoff
 
-Last updated: 2026-07-27
-Current phase: Phase 0 complete; Phase 1 reader features implemented and tested except cross-window scene activation
+Last updated: 2026-08-09
+Current phase: Phase 0 and Phase 1 complete; Phase 2 search/reading restoration slice implemented and simulator-tested; scene activation and explicit new-window routing remain
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Intended GitHub repository: `https://github.com/timetochilltoo/FileViewerIpad.git`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
@@ -28,7 +28,10 @@ The user subsequently approved implementation. Phase 0 is complete. Phase 1 now
 opens Markdown/PDF files through the picker, registered external-open flow, and
 drag/drop; persists and resolves capped recents; reads without writing; renders both
 formats; and provides defensive PDF thumbnail/outline navigation. Unit, UI, and
-simulator visual checks pass.
+simulator visual checks pass. The first Phase 2 slice now adds per-tab Markdown/PDF
+search, explicit result navigation, and versioned reading-position persistence for
+Markdown visible UTF-16 locations and PDF page/scale. Scene activation, explicit
+open-in-new-window routing, and relaunch-level restoration verification remain.
 
 ## 2. Non-negotiable reference rule
 
@@ -102,7 +105,10 @@ FileViewerIpad/
 │   ├── DocumentAccessRegistry.swift
 │   └── DocumentAccessService.swift
 ├── Core/Models/DocumentModels.swift
-├── Core/Persistence/RecentDocumentStore.swift
+├── Core/Persistence/
+│   ├── ReadingStateStore.swift
+│   └── RecentDocumentStore.swift
+├── Core/Search/DocumentSearchIndex.swift
 ├── Features/Markdown/
 │   ├── MarkdownBlockParser.swift
 │   └── MarkdownReaderView.swift
@@ -116,6 +122,8 @@ FileViewerIpadTests/
 ├── MarkdownBlockParserTests.swift
 ├── OpenRequestRouterTests.swift
 ├── PDFReaderModelTests.swift
+├── DocumentSearchIndexTests.swift
+├── ReadingStateStoreTests.swift
 ├── RecentDocumentStoreTests.swift
 └── WorkspaceModelTests.swift
 FileViewerIpadUITests/
@@ -381,11 +389,17 @@ Future AI:
 
 ### Phase 2: windows, search, restoration
 
-- one-shot open router
-- multiple iPad windows
-- Markdown/PDF search
-- page/zoom/visible-character persistence
-- scene and tab restoration
+- [x] one-shot open router for external URL delivery
+- [ ] multiple iPad windows with explicit open-in-new-window routing
+- [x] Markdown/PDF search with match counts, highlighting, and explicit navigation
+- [x] versioned PDF page/scale and Markdown visible-character persistence hooks
+- [ ] scene and tab restoration across relaunch
+
+The search and reading-position slice is implemented and covered by unit tests on
+the iPad simulator. Cross-window scene activation, a dedicated new-window action,
+and relaunch-level restoration remain the next implementation unit. PDF search is
+currently synchronous through PDFKit; larger-document cancellation and async search
+belong to viewer hardening.
 
 ### Phase 3: viewer hardening
 
@@ -474,13 +488,16 @@ Open:
 - Apple development team/signing choice for a physical-device build
 - whether the neutral core should become a local Swift package after it grows
 
-Neither blocks simulator-based Phase 1 work.
+Neither blocks simulator-based Phase 2 work.
 
-Known Phase 1 limitations:
+Known current limitations:
 
 - Cross-window duplicate detection returns the existing location, but UI scene
   activation is not implemented yet.
-- Markdown search/restoration and PDF search/restoration belong to Phase 2.
+- Search uses synchronous in-memory indexing for this first viewer slice; move
+  large PDF indexing to an asynchronous, cancellable service during hardening.
+- Persistence is versioned and wired into the readers, but relaunch restoration
+  and scene/tab session restoration still need an end-to-end UI acceptance test.
 - PDF fit-page, fit-width, and direct page-number entry remain.
 - External-open document registration and bookmark reopen have automated coverage
   at the router/service level, but still need manual acceptance with real Files and
@@ -493,17 +510,16 @@ Known Phase 1 limitations:
 2. Inspect `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` with read-only `git status`. The five documentation modifications listed in Section 2 are expected until the macOS agent commits them; do not clean or modify them.
 3. Check `git status` and preserve any user/agent changes.
 4. Regenerate with `xcodegen generate` only when `project.yml` changes.
-5. Begin Phase 2 with real scene registration and activation for
-   `.activateExisting(DocumentLocation)`.
+5. Begin the remaining Phase 2 work with real scene registration and activation for
+  `.activateExisting(DocumentLocation)`.
 6. Add explicit new-window/open-in-new-window flows without reintroducing a global
    notification consumed by every scene.
-7. Implement per-tab Markdown and PDF search using explicit navigation requests.
-8. Implement versioned PDF page/scale and Markdown first-visible-character
-   restoration.
-9. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures.
-10. Add/update this handoff after every meaningful implementation unit.
-11. Run the full simulator test command before committing.
-12. Commit and push coherent verified units under the configured Git identity.
+7. Add end-to-end UI coverage for search and restoration after scene routing is in
+   place; the core search and position hooks are already implemented.
+8. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures.
+9. Add/update this handoff after every meaningful implementation unit.
+10. Run the full simulator test command before committing.
+11. Commit and push coherent verified units under the configured Git identity.
 
 Do not begin with PDF annotations, Markdown editing, forms, or AI. Do not copy the macOS project wholesale.
 
@@ -520,20 +536,22 @@ xcodebuild \
   test
 ```
 
-Latest full-suite verification on 2026-07-27:
+Latest full-suite verification on 2026-08-09:
 
 - `DocumentAccessRegistryTests`: 2 passed
 - `DocumentAccessServiceTests`: 7 passed
 - `MarkdownBlockParserTests`: 2 passed
 - `OpenRequestRouterTests`: 1 passed
-- `PDFReaderModelTests`: 2 passed
+- `DocumentSearchIndexTests`: 3 passed
+- `PDFReaderModelTests`: 3 passed
+- `ReadingStateStoreTests`: 2 passed
 - `RecentDocumentStoreTests`: 2 passed
-- `WorkspaceModelTests`: 4 passed
+- `WorkspaceModelTests`: 6 passed
 - `FileViewerIpadUITests`: 3 passed
-- total: 23 passed, 0 failed
+- total: 28 unit tests and 3 UI tests passed, 0 failed
 - Xcode result: `** TEST SUCCEEDED **`
 - result bundle:
-  `/Users/patrickshi/Library/Developer/Xcode/DerivedData/FileViewerIpad-fuwbwmgwpkquxghbxzunvmzawqru/Logs/Test/Test-FileViewerIpad-2026.07.27_13-41-28-+0800.xcresult`
+  `/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.08.09_16-14-41-+0800.xcresult`
 
 The two-page PDF UI fixture was also installed and visually inspected on
 `FileViewer Test iPad`. Continuous pages, the bottom controls, and the navigation
@@ -565,4 +583,6 @@ Every entry should distinguish:
 - deferred
 
 Never describe a planned capability as working. The checked Phase 0/Phase 1 items
-above are implemented and verified; Phase 2 and later remain planned.
+and the checked Phase 2 search/position items above are implemented and verified at
+the stated level; scene activation, explicit new-window routing, session
+restoration, and later phases remain planned.

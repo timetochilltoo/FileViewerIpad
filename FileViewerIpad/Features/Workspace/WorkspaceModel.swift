@@ -32,6 +32,29 @@ final class WorkspaceModel {
         return tabs.first { $0.id == selectedTabID }
     }
 
+    var selectedSearchQuery: String {
+        get {
+            selectedTab?.search.query ?? ""
+        }
+        set {
+            updateSearchQuery(newValue)
+        }
+    }
+
+    var searchStatusText: String? {
+        guard let search = selectedTab?.search,
+              !search.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return nil
+        }
+        guard search.matchCount > 0 else { return "No matches" }
+        let index = DocumentSearchIndex.clampedMatchIndex(
+            search.currentMatchIndex,
+            count: search.matchCount
+        )
+        return "\(index + 1) of \(search.matchCount)"
+    }
+
     @discardableResult
     func open(_ resolvedDocument: ResolvedDocument) -> WorkspaceOpenResult {
         if let existing = tabs.first(where: {
@@ -95,6 +118,64 @@ final class WorkspaceModel {
 
     func refreshRecents(using store: any RecentDocumentStoring) async {
         recentDocuments = await store.recentDocuments()
+    }
+
+    func updateSearchQuery(_ query: String) {
+        guard let index = selectedTabIndex else { return }
+        let count = DocumentSearchIndex.ranges(
+            in: tabs[index].content,
+            query: query
+        ).count
+        tabs[index].search.query = query
+        tabs[index].search.currentMatchIndex = 0
+        tabs[index].search.matchCount = count
+        tabs[index].search.navigationRequestID = UUID()
+    }
+
+    func previousSearchMatch() {
+        guard let index = selectedTabIndex,
+              tabs[index].search.matchCount > 0 else { return }
+        let count = tabs[index].search.matchCount
+        tabs[index].search.currentMatchIndex =
+            (tabs[index].search.currentMatchIndex - 1 + count) % count
+        tabs[index].search.navigationRequestID = UUID()
+    }
+
+    func nextSearchMatch() {
+        guard let index = selectedTabIndex,
+              tabs[index].search.matchCount > 0 else { return }
+        let count = tabs[index].search.matchCount
+        tabs[index].search.currentMatchIndex =
+            (tabs[index].search.currentMatchIndex + 1) % count
+        tabs[index].search.navigationRequestID = UUID()
+    }
+
+    func restoreReadingPosition(
+        for tabID: DocumentTab.ID,
+        using store: any ReadingStateStoring
+    ) async {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }),
+              let position = try? await store.readingPosition(
+                  for: tabs[index].document.identity
+              ) else {
+            return
+        }
+        tabs[index].readingPosition = position
+    }
+
+    func updateReadingPosition(
+        _ position: ReadingPosition,
+        for tabID: DocumentTab.ID,
+        using store: any ReadingStateStoring
+    ) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }) else {
+            return
+        }
+        tabs[index].readingPosition = position
+        let identity = tabs[index].document.identity
+        Task {
+            try? await store.saveReadingPosition(position, for: identity)
+        }
     }
 
     func removeRecent(
@@ -167,5 +248,10 @@ final class WorkspaceModel {
         case let .activateExisting(existingLocation):
             return .activateExisting(existingLocation)
         }
+    }
+
+    private var selectedTabIndex: Int? {
+        guard let selectedTabID else { return nil }
+        return tabs.firstIndex { $0.id == selectedTabID }
     }
 }

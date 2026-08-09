@@ -27,6 +27,11 @@ final class PDFReaderModel {
     var navigatorMode: PDFNavigatorMode = .pages
     weak var pdfView: PDFView?
     private var thumbnails: [Int: UIImage] = [:]
+    private var searchSelections: [PDFSelection] = []
+    private var lastSearchQuery = ""
+    private var lastSearchRequestID: UUID?
+    private var lastAppliedReadingPosition: PDFReadingPosition?
+    var onReadingPositionChanged: ((ReadingPosition) -> Void)?
 
     init?(data: Data) {
         guard let document = PDFDocument(data: data) else {
@@ -37,8 +42,30 @@ final class PDFReaderModel {
         self.outlineEntries = Self.extractOutline(from: document)
     }
 
-    func attach(_ view: PDFView) {
+    func attach(
+        _ view: PDFView,
+        readingPosition: PDFReadingPosition? = nil
+    ) {
         pdfView = view
+        if let readingPosition {
+            restore(readingPosition)
+        }
+        synchronizePage()
+    }
+
+    func restore(_ position: PDFReadingPosition) {
+        lastAppliedReadingPosition = position
+        if position.scale != 1.0, position.scale > 0 {
+            pdfView?.scaleFactor = CGFloat(position.scale)
+        }
+        goToPage(at: position.page - 1)
+    }
+
+    func applyReadingPosition(_ position: PDFReadingPosition?) {
+        guard let position, position != lastAppliedReadingPosition else {
+            return
+        }
+        restore(position)
         synchronizePage()
     }
 
@@ -83,6 +110,37 @@ final class PDFReaderModel {
         let index = document.index(for: currentPDFPage)
         guard index != NSNotFound, (0..<pageCount).contains(index) else { return }
         currentPage = index + 1
+        let position = PDFReadingPosition(
+            page: currentPage,
+            scale: Double(pdfView?.scaleFactor ?? 1.0)
+        )
+        lastAppliedReadingPosition = position
+        onReadingPositionChanged?(.pdf(position))
+    }
+
+    func applySearch(_ state: SearchState) {
+        let query = state.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query != lastSearchQuery {
+            lastSearchQuery = query
+            searchSelections = query.isEmpty
+                ? []
+                : document.findString(query, withOptions: [.caseInsensitive])
+            pdfView?.highlightedSelections = searchSelections
+        }
+
+        guard !searchSelections.isEmpty,
+              lastSearchRequestID != state.navigationRequestID else {
+            if searchSelections.isEmpty {
+                pdfView?.highlightedSelections = nil
+            }
+            return
+        }
+        lastSearchRequestID = state.navigationRequestID
+        let index = DocumentSearchIndex.clampedMatchIndex(
+            state.currentMatchIndex,
+            count: searchSelections.count
+        )
+        pdfView?.go(to: searchSelections[index])
     }
 
     func thumbnail(at index: Int) -> UIImage? {
@@ -153,14 +211,30 @@ final class PDFReaderModel {
 
 struct PDFReaderView: View {
     @State private var model: PDFReaderModel?
+    let search: SearchState
+    let readingPosition: ReadingPosition
+    let onReadingPositionChanged: (ReadingPosition) -> Void
 
-    init(data: Data) {
+    init(
+        data: Data,
+        search: SearchState = SearchState(),
+        readingPosition: ReadingPosition = .pdf(PDFReadingPosition()),
+        onReadingPositionChanged: @escaping (ReadingPosition) -> Void = { _ in }
+    ) {
         _model = State(initialValue: PDFReaderModel(data: data))
+        self.search = search
+        self.readingPosition = readingPosition
+        self.onReadingPositionChanged = onReadingPositionChanged
     }
 
     var body: some View {
         if let model {
-            PDFKitContainer(model: model)
+            PDFKitContainer(
+                model: model,
+                search: search,
+                readingPosition: readingPosition,
+                onReadingPositionChanged: onReadingPositionChanged
+            )
                 .safeAreaInset(edge: .bottom) {
                     controls(model)
                 }
@@ -321,6 +395,14 @@ private struct PDFNavigatorView: View {
 
 private struct PDFKitContainer: UIViewRepresentable {
     let model: PDFReaderModel
+    let search: SearchState
+    let readingPosition: ReadingPosition
+    let onReadingPositionChanged: (ReadingPosition) -> Void
+
+    private var pdfReadingPosition: PDFReadingPosition? {
+        guard case let .pdf(position) = readingPosition else { return nil }
+        return position
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(model: model)
@@ -333,7 +415,12 @@ private struct PDFKitContainer: UIViewRepresentable {
         view.displayDirection = .vertical
         view.autoScales = true
         view.backgroundColor = .secondarySystemBackground
-        model.attach(view)
+        model.onReadingPositionChanged = onReadingPositionChanged
+        model.attach(
+            view,
+            readingPosition: pdfReadingPosition
+        )
+        model.applySearch(search)
         context.coordinator.observe(view)
         return view
     }
@@ -343,6 +430,9 @@ private struct PDFKitContainer: UIViewRepresentable {
             view.document = model.document
             view.autoScales = true
         }
+        model.onReadingPositionChanged = onReadingPositionChanged
+        model.applyReadingPosition(pdfReadingPosition)
+        model.applySearch(search)
     }
 
     static func dismantleUIView(_ view: PDFView, coordinator: Coordinator) {

@@ -5,9 +5,11 @@ struct WorkspaceView: View {
     let documentAccess: any DocumentAccessServicing
     let documentRegistry: DocumentAccessRegistry
     let recentStore: any RecentDocumentStoring
+    let readingState: any ReadingStateStoring
     let openRequestRouter: OpenRequestRouter
 
     @State private var isShowingImporter = false
+    @State private var readingPositionReadyTabIDs: Set<DocumentTab.ID> = []
 
     var body: some View {
         NavigationSplitView {
@@ -138,6 +140,7 @@ struct WorkspaceView: View {
             Text(model.presentedError ?? "")
         }
         .task {
+            readingPositionReadyTabIDs.formUnion(model.tabs.map(\.id))
             await model.refreshRecents(using: recentStore)
         }
         .onOpenURL { url in
@@ -151,15 +154,70 @@ struct WorkspaceView: View {
             open(url)
             return true
         }
+        .searchable(
+            text: Binding(
+                get: { model.selectedSearchQuery },
+                set: { model.updateSearchQuery($0) }
+            ),
+            placement: .toolbar,
+            prompt: "Search document"
+        )
+        .toolbar {
+            ToolbarItemGroup(placement: .secondaryAction) {
+                if let status = model.searchStatusText {
+                    Text(status)
+                        .foregroundStyle(
+                            status == "No matches" ? .orange : .secondary
+                        )
+                        .accessibilityIdentifier("search-status")
+                }
+                if model.selectedTab?.search.matchCount ?? 0 > 0 {
+                    Button("Previous Match", systemImage: "chevron.up") {
+                        model.previousSearchMatch()
+                    }
+                    Button("Next Match", systemImage: "chevron.down") {
+                        model.nextSearchMatch()
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private func documentView(for tab: DocumentTab) -> some View {
         switch tab.content {
         case let .markdown(text):
-            MarkdownReaderView(text: text)
+            MarkdownReaderView(
+                text: text,
+                search: tab.search,
+                readingPosition: tab.readingPosition,
+                onReadingPositionChanged: { position in
+                    guard readingPositionReadyTabIDs.contains(tab.id) else {
+                        return
+                    }
+                    model.updateReadingPosition(
+                        position,
+                        for: tab.id,
+                        using: readingState
+                    )
+                }
+            )
         case let .pdf(data):
-            PDFReaderView(data: data)
+            PDFReaderView(
+                data: data,
+                search: tab.search,
+                readingPosition: tab.readingPosition,
+                onReadingPositionChanged: { position in
+                    guard readingPositionReadyTabIDs.contains(tab.id) else {
+                        return
+                    }
+                    model.updateReadingPosition(
+                        position,
+                        for: tab.id,
+                        using: readingState
+                    )
+                }
+            )
         }
     }
 
@@ -171,22 +229,35 @@ struct WorkspaceView: View {
 
     private func open(_ recent: RecentDocument) {
         Task {
-            _ = await model.openRecentDocument(
+            let result = await model.openRecentDocument(
                 recent,
                 using: documentAccess,
                 registry: documentRegistry
             )
+            await restorePosition(for: result)
             await model.refreshRecents(using: recentStore)
         }
     }
 
     private func openAndRefresh(_ url: URL) async {
-        _ = await model.openDocument(
+        let result = await model.openDocument(
             at: url,
             using: documentAccess,
             registry: documentRegistry
         )
+        await restorePosition(for: result)
         await model.refreshRecents(using: recentStore)
+    }
+
+    private func restorePosition(for result: WorkspaceOpenResult?) async {
+        guard let tabID = switch result {
+        case let .opened(tabID), let .selectedExisting(tabID): tabID
+        case .activateExisting, nil: nil
+        } else {
+            return
+        }
+        await model.restoreReadingPosition(for: tabID, using: readingState)
+        readingPositionReadyTabIDs.insert(tabID)
     }
 }
 
@@ -205,6 +276,9 @@ struct WorkspaceView: View {
         ),
         documentRegistry: DocumentAccessRegistry(),
         recentStore: recents,
+        readingState: UserDefaultsReadingStateStore(
+            suiteName: "WorkspaceViewPreview"
+        ),
         openRequestRouter: OpenRequestRouter()
     )
 }

@@ -47,6 +47,25 @@ final class PDFReaderModelTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testSearchHighlightsAllMatchesAndNavigatesToRequestedMatch() throws {
+        let model = try XCTUnwrap(PDFReaderModel(data: makeSearchablePDFData()))
+        let pdfView = PDFView()
+        pdfView.document = model.document
+        model.attach(pdfView)
+
+        let state = SearchState(
+            query: "needle",
+            currentMatchIndex: 1,
+            matchCount: 2,
+            navigationRequestID: UUID()
+        )
+        model.applySearch(state)
+
+        XCTAssertEqual(pdfView.highlightedSelections?.count, 2)
+        XCTAssertNotNil(pdfView.currentPage)
+    }
+
     private func makePDFData() -> Data {
         let renderer = UIGraphicsPDFRenderer(
             bounds: CGRect(x: 0, y: 0, width: 300, height: 400)
@@ -56,6 +75,18 @@ final class PDFReaderModelTests: XCTestCase {
                 context.beginPage()
                 "Page \(page)".draw(at: CGPoint(x: 24, y: 24))
             }
+        }
+    }
+
+    private func makeSearchablePDFData() -> Data {
+        let renderer = UIGraphicsPDFRenderer(
+            bounds: CGRect(x: 0, y: 0, width: 300, height: 400)
+        )
+        return renderer.pdfData { context in
+            context.beginPage()
+            "First needle".draw(at: CGPoint(x: 24, y: 24))
+            context.beginPage()
+            "Second needle".draw(at: CGPoint(x: 24, y: 24))
         }
     }
 }

@@ -71,6 +71,7 @@ private struct WorkspaceSceneRoot: View {
             documentAccess: environment.documentAccess,
             documentRegistry: environment.documentRegistry,
             recentStore: environment.recentDocuments,
+            readingState: environment.readingState,
             openRequestRouter: environment.openRequestRouter
         )
     }

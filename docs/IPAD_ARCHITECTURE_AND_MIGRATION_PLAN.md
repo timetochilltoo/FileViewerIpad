@@ -1,7 +1,7 @@
 # FileViewer for iPad — Architecture and Migration Plan
 
-Last updated: 2026-07-27
-Status: Planning complete; Phase 0 complete; Phase 1 reader features verified except cross-window scene activation
+Last updated: 2026-08-09
+Status: Planning complete; Phase 0 and Phase 1 verified; Phase 2 search/reading-position slice implemented and simulator-tested; scene activation and explicit new-window routing remain
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
 
@@ -183,6 +183,11 @@ FileViewerIpad/
 └── FileViewerIpadUITests/
 ```
 
+The current implementation has `ReadingStateStore.swift` and
+`DocumentSearchIndex.swift` in these planned locations. `SceneSessionStore.swift`
+and the richer asynchronous search services remain planned for the multiple-window
+and hardening phases.
+
 The exact groups may change during scaffolding, but dependencies must point inward: UI depends on models and protocols; core services do not depend on SwiftUI views.
 
 ## 5.2 State ownership
@@ -308,6 +313,12 @@ Search:
 
 Editing controls, source/split mode, formatting, selection-to-source mapping, Save, and close prompts remain out of scope until the editing phase.
 
+The current read-only implementation renders parsed blocks in SwiftUI, highlights
+case-insensitive matches as attributed text, and restores the nearest block to the
+saved UTF-16 location. The search index is intentionally synchronous for this first
+slice; move PDF indexing and Markdown layout work to cancellable background tasks
+when large-document fixtures are introduced.
+
 ## 5.7 PDF reader
 
 Use PDFKit through `UIViewRepresentable`.
@@ -341,6 +352,12 @@ Search:
 Restoration stores a one-based user-facing page, PDF scale, and, if reliable on iPad PDFKit, a finer visible offset. Always clamp restored values to the current document.
 
 Annotations, form-dirty detection, drawing overlays, PDF save, and annotation undo stacks are not included in the first PDF reader implementation.
+
+The current PDF reader uses `PDFDocument.findString` for bounded in-memory search,
+keeps all selections highlighted, and navigates only when the tab's explicit search
+request ID changes. Its versioned reading state stores the one-based page and scale;
+`PDFKitContainer` applies a position that arrives after the initial view is created
+without reapplying normal scroll callbacks.
 
 ## 5.8 Responsive interface
 
@@ -380,6 +397,12 @@ Persistence keys should be versioned from the beginning. Writes should be deboun
 - scene closes
 
 Restoration failure must not block opening the app.
+
+The current viewer implements the first persistence slice with the
+`reading-state.v1` UserDefaults key. Records are JSON-encoded by stable document
+identity and contain only `ReadingPosition` values—never document contents. Reader
+callbacks are held until the initial restore attempt completes so a newly-created
+view cannot overwrite an existing saved position with its default page or offset.
 
 ## 5.10 Error model
 
@@ -482,13 +505,15 @@ xcodebuild \
   test
 ```
 
-The Phase 0 project passed this command on 2026-07-21 using the dedicated simulator:
+The current project passed the full command on 2026-08-09 using the dedicated
+simulator:
 
-- 4 unit tests passed
-- 1 UI launch test passed
+- 28 unit tests passed, including search, PDF highlighting, workspace navigation,
+  and reading-state persistence
+- 3 UI tests passed
 - 0 failures
 - result bundle:
-  `/private/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.07.21_02-15-52-+0800.xcresult`
+  `/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.08.09_16-14-41-+0800.xcresult`
 
 The result bundle is temporary and is not a project artifact. Also perform device builds with the personal signing team once configured.
 
@@ -534,11 +559,15 @@ Exit: supported files open from Files and render without writes; two documents r
 
 ### Phase 2 — Multiple windows, search, and restoration
 
-- scene registration and activation for duplicate opens
-- new-window/open-in-new-window flows
-- Markdown and PDF search with explicit navigation requests
-- page/zoom and visible-character persistence
-- scene/tab restoration from bookmarks
+- [ ] scene registration and activation for duplicate opens
+- [ ] new-window/open-in-new-window flows
+- [x] Markdown and PDF search with explicit navigation requests
+- [x] page/zoom and visible-character persistence hooks
+- [ ] scene/tab restoration from bookmarks
+
+The checked search and reading-position items are implemented and simulator-tested
+at the unit level. The phase is not complete until duplicate scenes can be activated,
+explicit new-window routing exists, and a relaunch-level restoration UI test passes.
 
 Exit: two iPad windows remain independent; search does not pull the user back after manual scrolling; reading position survives relaunch.
 
@@ -598,9 +627,11 @@ The first slice was completed without copying the macOS `DocumentModel.swift`:
 6. Add one unit test proving two workspace models do not share selected-document state.
 7. Build and test before introducing PDFKit or Markdown rendering.
 
-This provides a verified foundation for the highest-risk platform differences:
-security-scoped files and multi-window state ownership. The next implementation unit
-is Phase 1 secure opening and basic read-only Markdown/PDF readers.
+This provided a verified foundation for the highest-risk platform differences:
+security-scoped files and multi-window state ownership. Phase 1 secure opening and
+basic read-only Markdown/PDF readers, plus the first Phase 2 search/position slice,
+are now implemented. The next implementation unit is scene registration, duplicate
+scene activation, and explicit new-window routing.
 
 ## 10. Decisions deliberately deferred
 
