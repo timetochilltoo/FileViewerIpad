@@ -32,6 +32,8 @@
 		CD2C35BE18347C9B1FDACB74 /* OpenRequestRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1042CA4CD340612E7E0932 /* OpenRequestRouter.swift */; };
 		D58D7F14BFE2AF289E64AA71 /* FileViewerIpadUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */; };
 		DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */; };
+		E4567A19C679B22ABC8B12E6 /* WorkspaceSceneCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2E94B765B9347DBBD4AE75 /* WorkspaceSceneCoordinatorTests.swift */; };
+		FD9E17A039C39BF36FC41F11 /* WorkspaceSceneCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B56D719EDF7C80ADB4FDB67 /* WorkspaceSceneCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +63,7 @@
 		2C4B1A30E9AC42A17CD8A501 /* RecentDocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDocumentStore.swift; sourceTree = "<group>"; };
 		32DABC882C8A3AA4101CADB4 /* MarkdownReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownReaderView.swift; sourceTree = "<group>"; };
 		5A1042CA4CD340612E7E0932 /* OpenRequestRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRequestRouter.swift; sourceTree = "<group>"; };
+		5B56D719EDF7C80ADB4FDB67 /* WorkspaceSceneCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSceneCoordinator.swift; sourceTree = "<group>"; };
 		72E60DDB68BE75A9B3AF3B3B /* DocumentSearchIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSearchIndexTests.swift; sourceTree = "<group>"; };
 		7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistry.swift; sourceTree = "<group>"; };
 		7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
@@ -77,6 +80,7 @@
 		C7218A4E52CD2CFD3E9DF0D1 /* DocumentAccessService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessService.swift; sourceTree = "<group>"; };
 		D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadUITests.swift; sourceTree = "<group>"; };
 		D768EFCF92422F0EB800B92E /* RecentDocumentStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDocumentStoreTests.swift; sourceTree = "<group>"; };
+		DA2E94B765B9347DBBD4AE75 /* WorkspaceSceneCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSceneCoordinatorTests.swift; sourceTree = "<group>"; };
 		EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileViewerIpadApp.swift; sourceTree = "<group>"; };
 		ECF9CD813CD7E2181F993C89 /* FileViewerIpadTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FileViewerIpadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModelTests.swift; sourceTree = "<group>"; };
@@ -105,6 +109,7 @@
 				B9112E4AE0733A3A6128F2A5 /* ReadingStateStoreTests.swift */,
 				D768EFCF92422F0EB800B92E /* RecentDocumentStoreTests.swift */,
 				F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */,
+				DA2E94B765B9347DBBD4AE75 /* WorkspaceSceneCoordinatorTests.swift */,
 			);
 			path = FileViewerIpadTests;
 			sourceTree = "<group>";
@@ -191,6 +196,7 @@
 				A674B50CB4B59E7DC5668BCB /* AppEnvironment.swift */,
 				EA2104987A5B01C3B75AEB7E /* FileViewerIpadApp.swift */,
 				5A1042CA4CD340612E7E0932 /* OpenRequestRouter.swift */,
+				5B56D719EDF7C80ADB4FDB67 /* WorkspaceSceneCoordinator.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -336,6 +342,7 @@
 				3F7C67B3B6590791203F5BC4 /* ReadingStateStoreTests.swift in Sources */,
 				0CD16C09CACB06789853BE08 /* RecentDocumentStoreTests.swift in Sources */,
 				93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */,
+				E4567A19C679B22ABC8B12E6 /* WorkspaceSceneCoordinatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,6 +364,7 @@
 				27E8DF72EE583574FC1439D0 /* ReadingStateStore.swift in Sources */,
 				217D2FD4709D6C564F9C0D2F /* RecentDocumentStore.swift in Sources */,
 				4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */,
+				FD9E17A039C39BF36FC41F11 /* WorkspaceSceneCoordinator.swift in Sources */,
 				DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

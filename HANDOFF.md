@@ -1,7 +1,7 @@
 # FileViewer for iPad — Handoff
 
-Last updated: 2026-08-09
-Current phase: Phase 0 and Phase 1 complete; Phase 2 search/reading restoration slice implemented and simulator-tested; scene activation and explicit new-window routing remain
+Last updated: 2026-08-10
+Current phase: Phase 0 and Phase 1 complete; Phase 2 search/reading restoration and scene/new-window routing slices implemented and simulator-tested; relaunch session restoration remains
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Intended GitHub repository: `https://github.com/timetochilltoo/FileViewerIpad.git`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
@@ -30,8 +30,11 @@ drag/drop; persists and resolves capped recents; reads without writing; renders 
 formats; and provides defensive PDF thumbnail/outline navigation. Unit, UI, and
 simulator visual checks pass. The first Phase 2 slice now adds per-tab Markdown/PDF
 search, explicit result navigation, and versioned reading-position persistence for
-Markdown visible UTF-16 locations and PDF page/scale. Scene activation, explicit
-open-in-new-window routing, and relaunch-level restoration verification remain.
+Markdown visible UTF-16 locations and PDF page/scale. The second Phase 2 slice now
+uses a Codable/Hashable `WindowGroup` payload, `openWindow(value:)`, and an app-local
+scene coordinator to route new-window requests and cross-window duplicate activation
+to exactly one workspace. The simulator suite passes; relaunch-level session
+restoration and physical Files/iCloud acceptance remain.
 
 ## 2. Non-negotiable reference rule
 
@@ -99,7 +102,8 @@ FileViewerIpad/
 ├── App/
 │   ├── AppEnvironment.swift
 │   ├── FileViewerIpadApp.swift
-│   └── OpenRequestRouter.swift
+│   ├── OpenRequestRouter.swift
+│   └── WorkspaceSceneCoordinator.swift
 ├── Core/FileAccess/
 │   ├── DocumentAccessProtocols.swift
 │   ├── DocumentAccessRegistry.swift
@@ -125,7 +129,8 @@ FileViewerIpadTests/
 ├── DocumentSearchIndexTests.swift
 ├── ReadingStateStoreTests.swift
 ├── RecentDocumentStoreTests.swift
-└── WorkspaceModelTests.swift
+├── WorkspaceModelTests.swift
+└── WorkspaceSceneCoordinatorTests.swift
 FileViewerIpadUITests/
 └── FileViewerIpadUITests.swift
 ```
@@ -274,19 +279,21 @@ State boundaries:
 ```text
 AppEnvironment
 ├── OpenRequestRouter
+├── WorkspaceSceneCoordinator
 ├── DocumentAccessRegistry actor
 ├── BookmarkStore
 ├── RecentDocumentStore
 ├── ReadingStateStore
-└── SceneSessionStore
+└── SceneSessionStore (planned for relaunch restoration)
 
 WindowGroup
-└── WorkspaceModel (one per iPad window)
-    └── tabs: [DocumentTab]
-        ├── stable DocumentIdentity
-        ├── MarkdownReadDocument or PDFReadDocument
-        ├── search state
-        └── reading-position state
+└── WorkspaceSceneRoot (one per Codable scene payload)
+    └── WorkspaceModel (one per iPad window)
+        └── tabs: [DocumentTab]
+            ├── stable DocumentIdentity
+            ├── MarkdownReadDocument or PDFReadDocument
+            ├── search state
+            └── reading-position state
 ```
 
 The app environment owns services, not the selected document. Every iPad window owns its own workspace model. Every tab owns its own document-specific state.
@@ -294,6 +301,8 @@ The app environment owns services, not the selected document. Every iPad window 
 Use:
 
 - SwiftUI `WindowGroup` and `openWindow(value:)` for multiple windows
+- `WorkspaceSceneCoordinator` queues one-shot URL/recent open requests and target
+  tab activations by `WorkspaceID`; it is deliberately not a broadcast notification
 - `.fileImporter`, URL handling, and drag/drop for opening
 - security-scoped bookmarks for persistent Files/iCloud access
 - explicit, balanced security-scope lifetimes
@@ -383,23 +392,23 @@ Future AI:
 - [x] resolve bookmarks for reopen and add a capped/deduplicated Recent Documents list
 - [x] register PDF/Markdown document types and handle external URL delivery once
 - [x] accept supported file URL drag/drop in the workspace
-- [ ] activate the existing scene when a cross-window duplicate is found; the actor
-  currently returns its `DocumentLocation`, but scene activation is Phase 2 work
+- [x] activate the existing scene and tab when a cross-window duplicate is found
 - [x] PDF outline and thumbnail navigation with invalid-index guards
 
 ### Phase 2: windows, search, restoration
 
 - [x] one-shot open router for external URL delivery
-- [ ] multiple iPad windows with explicit open-in-new-window routing
+- [x] multiple iPad windows with explicit New Window and Open in New Window actions
 - [x] Markdown/PDF search with match counts, highlighting, and explicit navigation
 - [x] versioned PDF page/scale and Markdown visible-character persistence hooks
 - [ ] scene and tab restoration across relaunch
 
 The search and reading-position slice is implemented and covered by unit tests on
-the iPad simulator. Cross-window scene activation, a dedicated new-window action,
-and relaunch-level restoration remain the next implementation unit. PDF search is
-currently synchronous through PDFKit; larger-document cancellation and async search
-belong to viewer hardening.
+the iPad simulator. Scene activation and explicit new-window routing are now
+implemented and covered by coordinator tests plus a UI menu smoke test. Closing a
+workspace releases all of its registry claims. PDF search is currently synchronous
+through PDFKit; larger-document cancellation and async search belong to viewer
+hardening. Relaunch restoration is the remaining Phase 2 implementation unit.
 
 ### Phase 3: viewer hardening
 
@@ -492,8 +501,9 @@ Neither blocks simulator-based Phase 2 work.
 
 Known current limitations:
 
-- Cross-window duplicate detection returns the existing location, but UI scene
-  activation is not implemented yet.
+- Scene payload activation and explicit new-window routing are implemented for
+  simulator-tested viewer flows. The app still needs relaunch-level scene/tab
+  restoration, and scene-close behavior should receive a physical-device review.
 - Search uses synchronous in-memory indexing for this first viewer slice; move
   large PDF indexing to an asynchronous, cancellable service during hardening.
 - Persistence is versioned and wired into the readers, but relaunch restoration
@@ -509,17 +519,15 @@ Known current limitations:
 1. Read this file and `docs/IPAD_ARCHITECTURE_AND_MIGRATION_PLAN.md`.
 2. Inspect `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` with read-only `git status`. The five documentation modifications listed in Section 2 are expected until the macOS agent commits them; do not clean or modify them.
 3. Check `git status` and preserve any user/agent changes.
-4. Regenerate with `xcodegen generate` only when `project.yml` changes.
-5. Begin the remaining Phase 2 work with real scene registration and activation for
-  `.activateExisting(DocumentLocation)`.
-6. Add explicit new-window/open-in-new-window flows without reintroducing a global
-   notification consumed by every scene.
-7. Add end-to-end UI coverage for search and restoration after scene routing is in
-   place; the core search and position hooks are already implemented.
-8. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures.
-9. Add/update this handoff after every meaningful implementation unit.
-10. Run the full simulator test command before committing.
-11. Commit and push coherent verified units under the configured Git identity.
+4. Implement versioned scene/tab session restoration across relaunch, using bookmark
+   identities rather than serializing in-memory PDF/SwiftUI objects.
+5. Add an end-to-end UI test for restoration and verify missing/stale bookmarks are
+   skipped with a non-destructive message.
+6. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures on
+   a physical iPad when signing is available.
+7. Add/update this handoff after every meaningful implementation unit.
+8. Run the full simulator test command before committing.
+9. Commit and push coherent verified units under the configured Git identity.
 
 Do not begin with PDF annotations, Markdown editing, forms, or AI. Do not copy the macOS project wholesale.
 
@@ -532,11 +540,11 @@ xcodebuild \
   -project FileViewerIpad.xcodeproj \
   -scheme FileViewerIpad \
   -destination 'platform=iOS Simulator,id=174A3DF4-AE79-42FF-A063-90ED2887FBD7' \
-  -derivedDataPath /private/tmp/FileViewerIpadDerivedData \
+  -derivedDataPath /private/tmp/FileViewerIpadDerivedDataSceneFinal \
   test
 ```
 
-Latest full-suite verification on 2026-08-09:
+Latest full-suite verification on 2026-08-10:
 
 - `DocumentAccessRegistryTests`: 2 passed
 - `DocumentAccessServiceTests`: 7 passed
@@ -546,12 +554,20 @@ Latest full-suite verification on 2026-08-09:
 - `PDFReaderModelTests`: 3 passed
 - `ReadingStateStoreTests`: 2 passed
 - `RecentDocumentStoreTests`: 2 passed
-- `WorkspaceModelTests`: 6 passed
+- `WorkspaceModelTests`: 7 passed
+- `WorkspaceSceneCoordinatorTests`: 4 passed
 - `FileViewerIpadUITests`: 3 passed
-- total: 28 unit tests and 3 UI tests passed, 0 failed
+- total: 33 unit tests and 3 UI tests passed, 0 failed
 - Xcode result: `** TEST SUCCEEDED **`
 - result bundle:
-  `/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.08.09_16-14-41-+0800.xcresult`
+  `/tmp/FileViewerIpadDerivedDataSceneFinal/Logs/Test/Test-FileViewerIpad-2026.08.10_01-35-02-+0800.xcresult`
+
+The expanded suite also opens the Markdown debug fixture, exposes the Window
+Actions menu, and verifies both `New Window` and `Open in New Window` actions. The
+scene coordinator tests verify that queued requests and activations are delivered
+only to their target workspace. The unit-only follow-up after adding workspace
+close cleanup passed 32 tests at:
+`/tmp/FileViewerIpadDerivedDataScene3/Logs/Test/Test-FileViewerIpad-2026.08.10_01-32-33-+0800.xcresult`.
 
 The two-page PDF UI fixture was also installed and visually inspected on
 `FileViewer Test iPad`. Continuous pages, the bottom controls, and the navigation
@@ -583,6 +599,6 @@ Every entry should distinguish:
 - deferred
 
 Never describe a planned capability as working. The checked Phase 0/Phase 1 items
-and the checked Phase 2 search/position items above are implemented and verified at
-the stated level; scene activation, explicit new-window routing, session
-restoration, and later phases remain planned.
+and the checked Phase 2 search/position/scene-routing items above are implemented
+and verified at the stated level; relaunch session restoration and later phases
+remain planned.

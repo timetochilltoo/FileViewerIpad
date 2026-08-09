@@ -86,6 +86,48 @@ final class WorkspaceModelTests: XCTestCase {
     }
 
     @MainActor
+    func testClosingWorkspaceReleasesAllDocumentIdentities() async throws {
+        let workspace = WorkspaceModel()
+        let registry = DocumentAccessRegistry()
+        let first = makeDocument(
+            id: "first",
+            name: "First.md",
+            kind: .markdown
+        )
+        let second = makeDocument(
+            id: "second",
+            name: "Second.pdf",
+            kind: .pdf
+        )
+
+        _ = workspace.open(first)
+        _ = workspace.open(second)
+        _ = await registry.claim(
+            first.descriptor.identity,
+            at: DocumentLocation(
+                workspaceID: workspace.id,
+                tabID: workspace.tabs[0].id
+            )
+        )
+        _ = await registry.claim(
+            second.descriptor.identity,
+            at: DocumentLocation(
+                workspaceID: workspace.id,
+                tabID: workspace.tabs[1].id
+            )
+        )
+
+        await workspace.closeAllTabs(registry: registry)
+
+        let firstLocation = await registry.location(for: first.descriptor.identity)
+        let secondLocation = await registry.location(for: second.descriptor.identity)
+        XCTAssertTrue(workspace.tabs.isEmpty)
+        XCTAssertNil(workspace.selectedTabID)
+        XCTAssertNil(firstLocation)
+        XCTAssertNil(secondLocation)
+    }
+
+    @MainActor
     func testSearchCountsAndNavigatesMatchesPerSelectedTab() throws {
         let workspace = WorkspaceModel()
         let document = makeDocument(

@@ -19,6 +19,12 @@ final class FileViewerIpadUITests: XCTestCase {
             app.staticTexts["Phase 1 Test Document"].waitForExistence(timeout: 5)
         )
         XCTAssertTrue(app.buttons["Open Document"].exists)
+
+        let windowActions = app.buttons["window-actions"]
+        XCTAssertTrue(windowActions.exists)
+        windowActions.tap()
+        XCTAssertTrue(app.buttons["New Window"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["Open in New Window"].exists)
     }
 
     func testInjectedPDFDocumentRendersWithNavigation() {

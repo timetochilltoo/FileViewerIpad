@@ -220,6 +220,19 @@ final class WorkspaceModel {
         }
     }
 
+    func closeAllTabs(registry: DocumentAccessRegistry) async {
+        let removedTabs = tabs
+        tabs.removeAll()
+        selectedTabID = nil
+
+        for tab in removedTabs {
+            await registry.release(
+                tab.document.identity,
+                from: DocumentLocation(workspaceID: id, tabID: tab.id)
+            )
+        }
+    }
+
     private func accept(
         _ resolvedDocument: ResolvedDocument,
         registry: DocumentAccessRegistry

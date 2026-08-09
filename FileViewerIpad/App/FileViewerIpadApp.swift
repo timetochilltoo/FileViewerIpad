@@ -8,10 +8,15 @@ struct FileViewerIpadApp: App {
     @State private var environment = AppEnvironment()
 
     var body: some Scene {
-        WindowGroup {
-            WorkspaceSceneRoot()
-                .environment(environment)
-        }
+        WindowGroup(
+            id: "workspace",
+            for: WorkspaceSceneValue.self,
+            content: { $sceneValue in
+                WorkspaceSceneRoot(sceneValue: sceneValue)
+                    .environment(environment)
+            },
+            defaultValue: { WorkspaceSceneValue() }
+        )
     }
 }
 
@@ -19,8 +24,25 @@ private struct WorkspaceSceneRoot: View {
     @Environment(AppEnvironment.self) private var environment
     @State private var model: WorkspaceModel
 
-    init() {
-        let model = WorkspaceModel()
+    init(sceneValue: WorkspaceSceneValue) {
+        let model = Self.makeInitialModel(workspaceID: sceneValue.workspaceID)
+        _model = State(initialValue: model)
+    }
+
+    var body: some View {
+        WorkspaceView(
+            model: model,
+            documentAccess: environment.documentAccess,
+            documentRegistry: environment.documentRegistry,
+            recentStore: environment.recentDocuments,
+            readingState: environment.readingState,
+            openRequestRouter: environment.openRequestRouter,
+            sceneCoordinator: environment.sceneCoordinator
+        )
+    }
+
+    private static func makeInitialModel(workspaceID: WorkspaceID) -> WorkspaceModel {
+        let model = WorkspaceModel(id: workspaceID)
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--ui-test-markdown") {
             let descriptor = DocumentDescriptor(
@@ -62,17 +84,6 @@ private struct WorkspaceSceneRoot: View {
             )
         }
 #endif
-        _model = State(initialValue: model)
-    }
-
-    var body: some View {
-        WorkspaceView(
-            model: model,
-            documentAccess: environment.documentAccess,
-            documentRegistry: environment.documentRegistry,
-            recentStore: environment.recentDocuments,
-            readingState: environment.readingState,
-            openRequestRouter: environment.openRequestRouter
-        )
+        return model
     }
 }
