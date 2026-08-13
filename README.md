@@ -4,9 +4,8 @@ FileViewer is a native iPadOS Markdown and PDF reading workspace. It is being mi
 
 ## Current status
 
-Phase 0 and the Phase 1 reader implementation are complete. The current Phase 2
-slice adds search and reading-position restoration while leaving scene activation
-and explicit new-window routing for the next unit. The app now includes:
+Phase 0, Phase 1, and the simulator-verified Phase 2 implementation are complete.
+The app now includes:
 
 - iPadOS 26.0 minimum deployment target
 - iPad-only application target
@@ -25,14 +24,19 @@ and explicit new-window routing for the next unit. The app now includes:
   and explicit next/previous navigation
 - versioned UserDefaults-backed reading positions for Markdown visible UTF-16
   locations and PDF page/scale, including restore hooks
+- versioned per-scene tab and selection restoration through existing bookmark
+  identities, with bounded metadata-only records
+- safe stale/missing-document recovery that skips inaccessible tabs and explains
+  how to reopen them from Files
+- explicit New Window and Open in New Window actions plus targeted activation of
+  an already-owning scene
 - deterministic Markdown/PDF UI-test injection seams
-- 28 unit tests and 3 UI tests passing on the dedicated iPad simulator
+- 40 unit tests and 5 UI tests passing on the dedicated iPad simulator
 
-Cross-window duplicate detection is implemented, but activating the already-owning
-scene and explicit open-in-new-window routing are still deferred to the
-multiple-window phase. End-to-end relaunch restoration and manual Files/iCloud
-acceptance remain outstanding even though the persistence and reader hooks are
-implemented and unit-tested.
+Scene restoration is covered by a real terminate/relaunch UI test, and stale
+bookmark recovery is covered by a separate UI test. Physical-device signing,
+manual Files/iCloud-provider acceptance, and Phase 3 responsive/accessibility and
+large-document hardening remain outstanding.
 
 ## Requirements
 

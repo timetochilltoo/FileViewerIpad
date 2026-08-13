@@ -1,7 +1,7 @@
 # FileViewer for iPad — Architecture and Migration Plan
 
-Last updated: 2026-08-09
-Status: Planning complete; Phase 0 and Phase 1 verified; Phase 2 search/reading-position slice implemented and simulator-tested; scene activation and explicit new-window routing remain
+Last updated: 2026-08-13
+Status: Planning complete; Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; Phase 3 viewer hardening is next
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
 
@@ -183,10 +183,9 @@ FileViewerIpad/
 └── FileViewerIpadUITests/
 ```
 
-The current implementation has `ReadingStateStore.swift` and
-`DocumentSearchIndex.swift` in these planned locations. `SceneSessionStore.swift`
-and the richer asynchronous search services remain planned for the multiple-window
-and hardening phases.
+The current implementation has `ReadingStateStore.swift`, `SceneSessionStore.swift`,
+and `DocumentSearchIndex.swift` in these planned locations. The richer asynchronous
+search services remain planned for the hardening phase.
 
 The exact groups may change during scaffolding, but dependencies must point inward: UI depends on models and protocols; core services do not depend on SwiftUI views.
 
@@ -196,7 +195,7 @@ Use three levels of state:
 
 1. **App environment**
    - long-lived service objects
-   - bookmark, recent, and reading-state stores
+   - bookmark, recent, reading-state, and scene-session stores
    - `OpenRequestRouter`
    - `DocumentAccessRegistry` actor
    - never owns the selected document for every window
@@ -286,6 +285,16 @@ Behavior:
 - A future explicit “Open Read-Only Copy” feature may relax this rule, but ordinary open, recent, drag/drop, and restoration flows must not create duplicates.
 
 Scene restoration stores identifiers/bookmarks and tab state, not in-memory framework objects. Missing or inaccessible files are skipped with a clear non-destructive message.
+
+The current implementation uses a versioned `scene-sessions.v1` metadata record
+keyed by `WorkspaceID`. Each scene snapshot stores only ordered document identities,
+kinds, the selected identity, schema version, and update time. It stores no loaded
+Markdown, PDF bytes, paths, framework objects, or credentials. The store keeps at
+most 12 workspaces and 20 deduplicated documents per workspace. On launch, each
+workspace resolves its saved identities through the existing bookmark service,
+restores tab order, selection, and per-document reading positions, and respects the
+global one-instance registry. Missing or stale grants are skipped and reported in a
+single non-destructive alert; cancellation does not overwrite the saved snapshot.
 
 ## 5.6 Markdown reader
 
@@ -398,11 +407,13 @@ Persistence keys should be versioned from the beginning. Writes should be deboun
 
 Restoration failure must not block opening the app.
 
-The current viewer implements the first persistence slice with the
-`reading-state.v1` UserDefaults key. Records are JSON-encoded by stable document
-identity and contain only `ReadingPosition` values—never document contents. Reader
-callbacks are held until the initial restore attempt completes so a newly-created
-view cannot overwrite an existing saved position with its default page or offset.
+The current viewer implements `reading-state.v1` and `scene-sessions.v1` UserDefaults
+records. Reading positions are JSON-encoded by stable document identity. Scene
+sessions contain bounded identity/kind/order/selection metadata only. Neither store
+contains document contents. Reader callbacks and session writes are held until the
+initial restore attempt completes so a newly-created view cannot overwrite existing
+state with default values. Sessions are persisted after open/close/selection events,
+when a scene becomes inactive or backgrounded, and before scene teardown.
 
 ## 5.10 Error model
 
@@ -505,15 +516,16 @@ xcodebuild \
   test
 ```
 
-The current project passed the full command on 2026-08-09 using the dedicated
+The current project passed the full command on 2026-08-13 using the dedicated
 simulator:
 
-- 28 unit tests passed, including search, PDF highlighting, workspace navigation,
-  and reading-state persistence
-- 3 UI tests passed
+- 40 unit tests passed, including scene-session schema/capping/content-safety,
+  restoration order/selection/reading position, stale grants, and duplicate ownership
+- 5 UI tests passed, including real terminate/relaunch restoration and stale-session
+  recovery
 - 0 failures
 - result bundle:
-  `/tmp/FileViewerIpadDerivedData/Logs/Test/Test-FileViewerIpad-2026.08.09_16-14-41-+0800.xcresult`
+  `/Users/patrickshi/Library/Developer/Xcode/DerivedData/FileViewerIpad-fuwbwmgwpkquxghbxzunvmzawqru/Logs/Test/Test-FileViewerIpad-2026.08.13_10-11-44-+0800.xcresult`
 
 The result bundle is temporary and is not a project artifact. Also perform device builds with the personal signing team once configured.
 
@@ -551,23 +563,24 @@ unavailable on iOS. The implementation creates `.minimalBookmark` data while the
 document-provider grant is active. Recent-document reopen resolves that bookmark
 before calling `startAccessingSecurityScopedResource()` and refreshes stale data.
 
-Remaining Phase 1 boundary: the duplicate registry returns the owning
-`DocumentLocation`, but bringing that existing scene forward requires the Phase 2
-scene-registration layer.
+The Phase 2 scene-registration layer now uses the returned `DocumentLocation` to
+select and activate the already-owning scene instead of opening a duplicate.
 
 Exit: supported files open from Files and render without writes; two documents retain independent tab state.
 
 ### Phase 2 — Multiple windows, search, and restoration
 
-- [ ] scene registration and activation for duplicate opens
-- [ ] new-window/open-in-new-window flows
+- [x] scene registration and activation for duplicate opens
+- [x] new-window/open-in-new-window flows
 - [x] Markdown and PDF search with explicit navigation requests
 - [x] page/zoom and visible-character persistence hooks
-- [ ] scene/tab restoration from bookmarks
+- [x] scene/tab restoration from bookmarks
 
-The checked search and reading-position items are implemented and simulator-tested
-at the unit level. The phase is not complete until duplicate scenes can be activated,
-explicit new-window routing exists, and a relaunch-level restoration UI test passes.
+Phase 2 implementation exit was achieved on 2026-08-13. Targeted scene routing is
+covered by coordinator/model tests and a UI menu smoke test. Session persistence is
+covered by store/model tests, a real app terminate/relaunch UI test, and a stale
+bookmark recovery UI test. Physical-device scene lifecycle and real Files/iCloud
+provider acceptance remain manual checks, not missing implementation.
 
 Exit: two iPad windows remain independent; search does not pull the user back after manual scrolling; reading position survives relaunch.
 
@@ -629,9 +642,9 @@ The first slice was completed without copying the macOS `DocumentModel.swift`:
 
 This provided a verified foundation for the highest-risk platform differences:
 security-scoped files and multi-window state ownership. Phase 1 secure opening and
-basic read-only Markdown/PDF readers, plus the first Phase 2 search/position slice,
-are now implemented. The next implementation unit is scene registration, duplicate
-scene activation, and explicit new-window routing.
+basic read-only Markdown/PDF readers, and the complete Phase 2 window/search/session
+implementation are now verified on the iPad simulator. The next implementation unit
+is the first Phase 3 responsive/accessibility hardening slice.
 
 ## 10. Decisions deliberately deferred
 

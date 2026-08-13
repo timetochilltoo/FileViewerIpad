@@ -20,6 +20,10 @@ actor UserDefaultsBookmarkStore: BookmarkStoring {
         self.defaults = defaults
     }
 
+    init(suiteName: String) {
+        self.defaults = UserDefaults(suiteName: suiteName) ?? .standard
+    }
+
     func bookmarkData(for identity: DocumentIdentity) -> Data? {
         records()[identity.persistentID]
     }

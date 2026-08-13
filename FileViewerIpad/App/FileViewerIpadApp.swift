@@ -15,8 +15,26 @@ struct FileViewerIpadApp: App {
                 WorkspaceSceneRoot(sceneValue: sceneValue)
                     .environment(environment)
             },
-            defaultValue: { WorkspaceSceneValue() }
+            defaultValue: { Self.defaultSceneValue() }
         )
+    }
+
+    private static func defaultSceneValue() -> WorkspaceSceneValue {
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--ui-test-session-seed")
+            || arguments.contains("--ui-test-session-restore")
+            || arguments.contains("--ui-test-session-stale") {
+            return WorkspaceSceneValue(
+                workspaceID: WorkspaceID(
+                    rawValue: UUID(
+                        uuidString: "A67B1164-E29C-4E2F-A87B-5A783CB30260"
+                    )!
+                )
+            )
+        }
+#endif
+        return WorkspaceSceneValue()
     }
 }
 
@@ -36,6 +54,7 @@ private struct WorkspaceSceneRoot: View {
             documentRegistry: environment.documentRegistry,
             recentStore: environment.recentDocuments,
             readingState: environment.readingState,
+            sceneSessionStore: environment.sceneSessions,
             openRequestRouter: environment.openRequestRouter,
             sceneCoordinator: environment.sceneCoordinator
         )

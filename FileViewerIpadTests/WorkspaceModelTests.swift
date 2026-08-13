@@ -175,10 +175,155 @@ final class WorkspaceModelTests: XCTestCase {
         }
         let position = ReadingPosition.pdf(PDFReadingPosition(page: 3, scale: 1.5))
 
-        try await store.saveReadingPosition(position, for: document.descriptor.identity)
+        await store.saveReadingPosition(position, for: document.descriptor.identity)
         await workspace.restoreReadingPosition(for: tabID, using: store)
 
         XCTAssertEqual(workspace.tabs.first?.readingPosition, position)
+    }
+
+    @MainActor
+    func testRestoresSessionOrderSelectionAndReadingPosition() async throws {
+        let suiteName = "WorkspaceModelTests.\(UUID().uuidString)"
+        let readingStore = UserDefaultsReadingStateStore(suiteName: suiteName)
+        let registry = DocumentAccessRegistry()
+        let workspace = WorkspaceModel()
+        let first = makeDocument(
+            id: "first-session-document",
+            name: "First.md",
+            kind: .markdown
+        )
+        let second = makeDocument(
+            id: "second-session-document",
+            name: "Second.pdf",
+            kind: .pdf
+        )
+        let restoredPosition = ReadingPosition.pdf(
+            PDFReadingPosition(page: 4, scale: 1.5)
+        )
+        let session = WorkspaceSession(
+            documents: [first, second].map {
+                WorkspaceSessionDocument(descriptor: $0.descriptor)
+            },
+            selectedDocumentPersistentID: first.descriptor.identity.persistentID,
+            updatedAt: Date(timeIntervalSince1970: 10)
+        )
+        let accessService = RestorationDocumentAccessService(
+            documents: [first, second]
+        )
+        defer {
+            UserDefaults(suiteName: suiteName)?
+                .removePersistentDomain(forName: suiteName)
+        }
+
+        await readingStore.saveReadingPosition(
+            restoredPosition,
+            for: second.descriptor.identity
+        )
+        let result = await workspace.restoreSession(
+            session,
+            using: accessService,
+            registry: registry,
+            readingState: readingStore
+        )
+
+        XCTAssertEqual(result.restoredTabIDs.count, 2)
+        XCTAssertTrue(result.skippedDocumentIdentities.isEmpty)
+        XCTAssertFalse(result.wasCancelled)
+        XCTAssertEqual(
+            workspace.tabs.map(\.document.identity.persistentID),
+            ["first-session-document", "second-session-document"]
+        )
+        XCTAssertEqual(
+            workspace.selectedTab?.document.identity.persistentID,
+            "first-session-document"
+        )
+        XCTAssertEqual(workspace.tabs[1].readingPosition, restoredPosition)
+    }
+
+    @MainActor
+    func testSessionRestorationSkipsUnavailableDocumentAndExplainsRecovery() async {
+        let workspace = WorkspaceModel()
+        let registry = DocumentAccessRegistry()
+        let available = makeDocument(
+            id: "available",
+            name: "Available.md",
+            kind: .markdown
+        )
+        let missingIdentity = DocumentIdentity(
+            persistentID: "missing",
+            displayName: "Missing.md"
+        )
+        let session = WorkspaceSession(
+            documents: [
+                WorkspaceSessionDocument(descriptor: available.descriptor),
+                WorkspaceSessionDocument(
+                    identity: missingIdentity,
+                    kind: .markdown
+                )
+            ],
+            selectedDocumentPersistentID: missingIdentity.persistentID
+        )
+        let accessService = RestorationDocumentAccessService(
+            documents: [available],
+            unavailablePersistentIDs: [missingIdentity.persistentID]
+        )
+
+        let result = await workspace.restoreSession(
+            session,
+            using: accessService,
+            registry: registry,
+            readingState: InMemoryReadingStateStore()
+        )
+
+        XCTAssertEqual(workspace.tabs.count, 1)
+        XCTAssertEqual(result.skippedDocumentIdentities, [missingIdentity])
+        XCTAssertEqual(
+            workspace.presentedErrorTitle,
+            "Some Documents Were Not Restored"
+        )
+        XCTAssertTrue(workspace.presentedError?.contains("Missing.md") == true)
+        XCTAssertTrue(workspace.presentedError?.contains("Open them again from Files") == true)
+    }
+
+    @MainActor
+    func testSessionRestorationDoesNotDuplicateDocumentOwnedByAnotherScene() async throws {
+        let firstWorkspace = WorkspaceModel()
+        let restoringWorkspace = WorkspaceModel()
+        let registry = DocumentAccessRegistry()
+        let document = makeDocument(
+            id: "owned-document",
+            name: "Owned.md",
+            kind: .markdown
+        )
+        let accessService = RestorationDocumentAccessService(documents: [document])
+        _ = await firstWorkspace.openDocument(
+            at: URL(fileURLWithPath: "/Owned.md"),
+            using: accessService,
+            registry: registry
+        )
+        let ownerTabID = try XCTUnwrap(firstWorkspace.selectedTabID)
+        let session = WorkspaceSession(
+            documents: [WorkspaceSessionDocument(descriptor: document.descriptor)],
+            selectedDocumentPersistentID: document.descriptor.identity.persistentID
+        )
+
+        let result = await restoringWorkspace.restoreSession(
+            session,
+            using: accessService,
+            registry: registry,
+            readingState: InMemoryReadingStateStore()
+        )
+
+        XCTAssertTrue(restoringWorkspace.tabs.isEmpty)
+        XCTAssertEqual(
+            result.duplicateLocations,
+            [
+                DocumentLocation(
+                    workspaceID: firstWorkspace.id,
+                    tabID: ownerTabID
+                )
+            ]
+        )
     }
 
     private func makeDocument(
@@ -220,5 +365,54 @@ private struct StubDocumentAccessService: DocumentAccessServicing {
 
     func resolveDocument(for recent: RecentDocument) async throws -> ResolvedDocument {
         document
+    }
+}
+
+private struct RestorationDocumentAccessService: DocumentAccessServicing {
+    let documentsByPersistentID: [String: ResolvedDocument]
+    let unavailablePersistentIDs: Set<String>
+
+    init(
+        documents: [ResolvedDocument],
+        unavailablePersistentIDs: Set<String> = []
+    ) {
+        self.documentsByPersistentID = Dictionary(
+            uniqueKeysWithValues: documents.map {
+                ($0.descriptor.identity.persistentID, $0)
+            }
+        )
+        self.unavailablePersistentIDs = unavailablePersistentIDs
+    }
+
+    func resolveDocument(at url: URL) async throws -> ResolvedDocument {
+        guard let document = documentsByPersistentID.values.first else {
+            throw DocumentAccessError.missingFile
+        }
+        return document
+    }
+
+    func resolveDocument(for recent: RecentDocument) async throws -> ResolvedDocument {
+        guard !unavailablePersistentIDs.contains(recent.identity.persistentID),
+              let document = documentsByPersistentID[
+                  recent.identity.persistentID
+              ] else {
+            throw DocumentAccessError.staleBookmark
+        }
+        return document
+    }
+}
+
+private actor InMemoryReadingStateStore: ReadingStateStoring {
+    private var positions: [String: ReadingPosition] = [:]
+
+    func readingPosition(for identity: DocumentIdentity) -> ReadingPosition? {
+        positions[identity.persistentID]
+    }
+
+    func saveReadingPosition(
+        _ position: ReadingPosition,
+        for identity: DocumentIdentity
+    ) {
+        positions[identity.persistentID] = position
     }
 }

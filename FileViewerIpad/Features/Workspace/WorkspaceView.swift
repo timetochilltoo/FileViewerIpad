@@ -6,14 +6,20 @@ struct WorkspaceView: View {
     let documentRegistry: DocumentAccessRegistry
     let recentStore: any RecentDocumentStoring
     let readingState: any ReadingStateStoring
+    let sceneSessionStore: any SceneSessionStoring
     let openRequestRouter: OpenRequestRouter
     let sceneCoordinator: WorkspaceSceneCoordinator
 
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var isShowingImporter = false
     @State private var isShowingNewWindowImporter = false
     @State private var readingPositionReadyTabIDs: Set<DocumentTab.ID> = []
+    @State private var hasCompletedInitialSessionRestore = false
+#if DEBUG
+    @State private var isUITestSessionPersisted = false
+#endif
 
     var body: some View {
         NavigationSplitView {
@@ -45,6 +51,7 @@ struct WorkspaceView: View {
                                         registry: documentRegistry
                                     )
                                 }
+                                await persistSession()
                             }
                         }
                     }
@@ -163,7 +170,7 @@ struct WorkspaceView: View {
             }
         }
         .alert(
-            "Unable to Open Document",
+            model.presentedErrorTitle,
             isPresented: Binding(
                 get: { model.presentedError != nil },
                 set: { isPresented in
@@ -183,12 +190,34 @@ struct WorkspaceView: View {
             sceneCoordinator.register(model.id)
             readingPositionReadyTabIDs.formUnion(model.tabs.map(\.id))
             await model.refreshRecents(using: recentStore)
+
+#if DEBUG
+            await seedUITestStaleSessionIfRequested()
+#endif
+            guard await restoreSavedSessionIfNeeded() else { return }
+            hasCompletedInitialSessionRestore = true
             await processSceneRequests()
+#if DEBUG
+            await seedUITestSessionIfRequested()
+#endif
+            await persistSession()
         }
         .onDisappear {
             sceneCoordinator.unregister(model.id)
             Task {
+                await persistSession()
                 await model.closeAllTabs(registry: documentRegistry)
+            }
+        }
+        .onChange(of: model.selectedTabID) { _, _ in
+            Task {
+                await persistSession()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase != .active else { return }
+            Task {
+                await persistSession()
             }
         }
         .onChange(of: sceneCoordinator.revision) { _, _ in
@@ -234,6 +263,17 @@ struct WorkspaceView: View {
                 }
             }
         }
+#if DEBUG
+        .overlay(alignment: .bottomTrailing) {
+            if isUITestSessionPersisted {
+                Text("Session persisted")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(4)
+                    .accessibilityIdentifier("session-persisted")
+            }
+        }
+#endif
     }
 
     @ViewBuilder
@@ -294,6 +334,7 @@ struct WorkspaceView: View {
         )
         await handle(result)
         await model.refreshRecents(using: recentStore)
+        await persistSession()
     }
 
     private func openRecentAndRefresh(_ recent: RecentDocument) async {
@@ -304,6 +345,7 @@ struct WorkspaceView: View {
         )
         await handle(result)
         await model.refreshRecents(using: recentStore)
+        await persistSession()
     }
 
     private func handle(_ result: WorkspaceOpenResult?) async {
@@ -316,17 +358,6 @@ struct WorkspaceView: View {
         case nil:
             break
         }
-    }
-
-    private func restorePosition(for result: WorkspaceOpenResult?) async {
-        guard let tabID = switch result {
-        case let .opened(tabID), let .selectedExisting(tabID): tabID
-        case .activateExisting, nil: nil
-        } else {
-            return
-        }
-        await model.restoreReadingPosition(for: tabID, using: readingState)
-        readingPositionReadyTabIDs.insert(tabID)
     }
 
     private func restorePosition(for tabID: DocumentTab.ID) async {
@@ -365,6 +396,98 @@ struct WorkspaceView: View {
             }
         }
     }
+
+    private func restoreSavedSessionIfNeeded() async -> Bool {
+        guard sessionPersistenceIsEnabled, model.tabs.isEmpty,
+              let session = await sceneSessionStore.session(for: model.id) else {
+            return true
+        }
+
+        let result = await model.restoreSession(
+            session,
+            using: documentAccess,
+            registry: documentRegistry,
+            readingState: readingState
+        )
+        readingPositionReadyTabIDs.formUnion(result.restoredTabIDs)
+        return !result.wasCancelled
+    }
+
+    private func persistSession() async {
+        guard sessionPersistenceIsEnabled,
+              hasCompletedInitialSessionRestore else {
+            return
+        }
+
+        if let session = model.sessionSnapshot() {
+            await sceneSessionStore.saveSession(session, for: model.id)
+        } else {
+            await sceneSessionStore.removeSession(for: model.id)
+        }
+    }
+
+    private var sessionPersistenceIsEnabled: Bool {
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        return !arguments.contains("--ui-test-markdown")
+            && !arguments.contains("--ui-test-pdf")
+#else
+        return true
+#endif
+    }
+
+#if DEBUG
+    private func seedUITestStaleSessionIfRequested() async {
+        guard ProcessInfo.processInfo.arguments.contains(
+            "--ui-test-session-stale"
+        ) else {
+            return
+        }
+
+        let missingDocument = WorkspaceSessionDocument(
+            identity: DocumentIdentity(
+                persistentID: "ui-test-missing-session-document",
+                displayName: "MissingSession.md"
+            ),
+            kind: .markdown
+        )
+        await sceneSessionStore.saveSession(
+            WorkspaceSession(
+                documents: [missingDocument],
+                selectedDocumentPersistentID: missingDocument.identity.persistentID
+            ),
+            for: model.id
+        )
+    }
+
+    private func seedUITestSessionIfRequested() async {
+        guard ProcessInfo.processInfo.arguments.contains(
+            "--ui-test-session-seed"
+        ) else {
+            return
+        }
+
+        do {
+            let documentsDirectory = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let fixtureURL = documentsDirectory
+                .appendingPathComponent("SessionRestoration.md")
+            let fixture = "# Restored Session Document\n\n"
+                + "This Markdown file was reopened from a saved scene session."
+            try Data(fixture.utf8).write(to: fixtureURL, options: .atomic)
+            await openAndRefresh(fixtureURL)
+            isUITestSessionPersisted = model.tabs.contains {
+                $0.document.identity.displayName == fixtureURL.lastPathComponent
+            }
+        } catch {
+            model.presentOpenError(error)
+        }
+    }
+#endif
 }
 
 #Preview {
@@ -383,6 +506,9 @@ struct WorkspaceView: View {
         documentRegistry: DocumentAccessRegistry(),
         recentStore: recents,
         readingState: UserDefaultsReadingStateStore(
+            suiteName: "WorkspaceViewPreview"
+        ),
+        sceneSessionStore: UserDefaultsSceneSessionStore(
             suiteName: "WorkspaceViewPreview"
         ),
         openRequestRouter: OpenRequestRouter(),

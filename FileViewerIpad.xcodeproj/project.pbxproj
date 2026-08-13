@@ -13,6 +13,7 @@
 		27E8DF72EE583574FC1439D0 /* ReadingStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE9CA61720C4ABD837866AD /* ReadingStateStore.swift */; };
 		3E07789949967AEB3D7AFAEF /* DocumentAccessRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */; };
 		3F7C67B3B6590791203F5BC4 /* ReadingStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9112E4AE0733A3A6128F2A5 /* ReadingStateStoreTests.swift */; };
+		41AF393F16A5BDF45719E688 /* SceneSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9182E2B81872CC43902F4485 /* SceneSessionStoreTests.swift */; };
 		4317B92A6F9943046D567AA5 /* MarkdownReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DABC882C8A3AA4101CADB4 /* MarkdownReaderView.swift */; };
 		48178FE82229793FB44E18DB /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A674B50CB4B59E7DC5668BCB /* AppEnvironment.swift */; };
 		4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40E26FAEC1E238A6A4EA9A9 /* WorkspaceModel.swift */; };
@@ -33,6 +34,7 @@
 		D58D7F14BFE2AF289E64AA71 /* FileViewerIpadUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466947D7552F548FB84C0D8 /* FileViewerIpadUITests.swift */; };
 		DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */; };
 		E4567A19C679B22ABC8B12E6 /* WorkspaceSceneCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2E94B765B9347DBBD4AE75 /* WorkspaceSceneCoordinatorTests.swift */; };
+		E96E0437C0443D15B4B2D6D2 /* SceneSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C6EEB9C8A73687BEA03AD5 /* SceneSessionStore.swift */; };
 		FD9E17A039C39BF36FC41F11 /* WorkspaceSceneCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B56D719EDF7C80ADB4FDB67 /* WorkspaceSceneCoordinator.swift */; };
 /* End PBXBuildFile section */
 
@@ -65,8 +67,10 @@
 		5A1042CA4CD340612E7E0932 /* OpenRequestRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRequestRouter.swift; sourceTree = "<group>"; };
 		5B56D719EDF7C80ADB4FDB67 /* WorkspaceSceneCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSceneCoordinator.swift; sourceTree = "<group>"; };
 		72E60DDB68BE75A9B3AF3B3B /* DocumentSearchIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentSearchIndexTests.swift; sourceTree = "<group>"; };
+		76C6EEB9C8A73687BEA03AD5 /* SceneSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneSessionStore.swift; sourceTree = "<group>"; };
 		7A416BB8259A9969BA4140BF /* DocumentAccessRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistry.swift; sourceTree = "<group>"; };
 		7C3A13CF09A8F22C6E0F1C86 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		9182E2B81872CC43902F4485 /* SceneSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneSessionStoreTests.swift; sourceTree = "<group>"; };
 		9B9E79F6EEFB6C0DD9E072F3 /* DocumentAccessServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessServiceTests.swift; sourceTree = "<group>"; };
 		9CE9CA61720C4ABD837866AD /* ReadingStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStateStore.swift; sourceTree = "<group>"; };
 		9F3C0A45FF8D758F008B1901 /* DocumentAccessRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentAccessRegistryTests.swift; sourceTree = "<group>"; };
@@ -93,6 +97,7 @@
 			children = (
 				9CE9CA61720C4ABD837866AD /* ReadingStateStore.swift */,
 				2C4B1A30E9AC42A17CD8A501 /* RecentDocumentStore.swift */,
+				76C6EEB9C8A73687BEA03AD5 /* SceneSessionStore.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -108,6 +113,7 @@
 				23D3AF5DC9EEEBFE898CDD1B /* PDFReaderModelTests.swift */,
 				B9112E4AE0733A3A6128F2A5 /* ReadingStateStoreTests.swift */,
 				D768EFCF92422F0EB800B92E /* RecentDocumentStoreTests.swift */,
+				9182E2B81872CC43902F4485 /* SceneSessionStoreTests.swift */,
 				F64BEBD099BAEF9102939305 /* WorkspaceModelTests.swift */,
 				DA2E94B765B9347DBBD4AE75 /* WorkspaceSceneCoordinatorTests.swift */,
 			);
@@ -341,6 +347,7 @@
 				84D48A416BFDBDD2CF14591E /* PDFReaderModelTests.swift in Sources */,
 				3F7C67B3B6590791203F5BC4 /* ReadingStateStoreTests.swift in Sources */,
 				0CD16C09CACB06789853BE08 /* RecentDocumentStoreTests.swift in Sources */,
+				41AF393F16A5BDF45719E688 /* SceneSessionStoreTests.swift in Sources */,
 				93A3C55A5E4B5ACA0206881C /* WorkspaceModelTests.swift in Sources */,
 				E4567A19C679B22ABC8B12E6 /* WorkspaceSceneCoordinatorTests.swift in Sources */,
 			);
@@ -363,6 +370,7 @@
 				4E0FC0415306E2DD10F9A7F8 /* PDFReaderView.swift in Sources */,
 				27E8DF72EE583574FC1439D0 /* ReadingStateStore.swift in Sources */,
 				217D2FD4709D6C564F9C0D2F /* RecentDocumentStore.swift in Sources */,
+				E96E0437C0443D15B4B2D6D2 /* SceneSessionStore.swift in Sources */,
 				4CB7A66037B5A63465C28572 /* WorkspaceModel.swift in Sources */,
 				FD9E17A039C39BF36FC41F11 /* WorkspaceSceneCoordinator.swift in Sources */,
 				DD70155787B321A36975ED6D /* WorkspaceView.swift in Sources */,

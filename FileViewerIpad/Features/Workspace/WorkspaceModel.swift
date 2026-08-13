@@ -7,6 +7,13 @@ enum WorkspaceOpenResult: Equatable {
     case activateExisting(DocumentLocation)
 }
 
+struct WorkspaceSessionRestorationResult: Equatable, Sendable {
+    let restoredTabIDs: [DocumentTab.ID]
+    let skippedDocumentIdentities: [DocumentIdentity]
+    let duplicateLocations: [DocumentLocation]
+    let wasCancelled: Bool
+}
+
 @MainActor
 @Observable
 final class WorkspaceModel {
@@ -15,6 +22,7 @@ final class WorkspaceModel {
     var selectedTabID: DocumentTab.ID?
     private(set) var isOpeningDocument = false
     private(set) var presentedError: String?
+    private(set) var presentedErrorTitle = "Unable to Open Document"
     private(set) var recentDocuments: [RecentDocument] = []
 
     init(
@@ -81,6 +89,7 @@ final class WorkspaceModel {
     ) async -> WorkspaceOpenResult? {
         isOpeningDocument = true
         presentedError = nil
+        presentedErrorTitle = "Unable to Open Document"
         defer { isOpeningDocument = false }
 
         do {
@@ -103,6 +112,7 @@ final class WorkspaceModel {
     ) async -> WorkspaceOpenResult? {
         isOpeningDocument = true
         presentedError = nil
+        presentedErrorTitle = "Unable to Open Document"
         defer { isOpeningDocument = false }
 
         do {
@@ -114,6 +124,76 @@ final class WorkspaceModel {
             presentOpenError(error)
             return nil
         }
+    }
+
+    func restoreSession(
+        _ session: WorkspaceSession,
+        using accessService: any DocumentAccessServicing,
+        registry: DocumentAccessRegistry,
+        readingState: any ReadingStateStoring
+    ) async -> WorkspaceSessionRestorationResult {
+        guard session.schemaVersion == WorkspaceSession.currentSchemaVersion else {
+            return WorkspaceSessionRestorationResult(
+                restoredTabIDs: [],
+                skippedDocumentIdentities: session.documents.map(\.identity),
+                duplicateLocations: [],
+                wasCancelled: false
+            )
+        }
+
+        isOpeningDocument = true
+        presentedError = nil
+        presentedErrorTitle = "Unable to Open Document"
+        defer { isOpeningDocument = false }
+
+        var restoredTabIDs: [DocumentTab.ID] = []
+        var skippedIdentities: [DocumentIdentity] = []
+        var duplicateLocations: [DocumentLocation] = []
+        var wasCancelled = false
+
+        for document in session.documents {
+            if Task.isCancelled {
+                wasCancelled = true
+                break
+            }
+            do {
+                let resolvedDocument = try await accessService.resolveDocument(
+                    for: document.recentDocument(restoredAt: session.updatedAt)
+                )
+                switch await accept(resolvedDocument, registry: registry) {
+                case let .opened(tabID), let .selectedExisting(tabID):
+                    await restoreReadingPosition(for: tabID, using: readingState)
+                    restoredTabIDs.append(tabID)
+                case let .activateExisting(location):
+                    duplicateLocations.append(location)
+                }
+            } catch is CancellationError {
+                wasCancelled = true
+                break
+            } catch {
+                skippedIdentities.append(document.identity)
+            }
+        }
+
+        if let selectedID = session.selectedDocumentPersistentID,
+           let selectedTab = tabs.first(where: {
+               $0.document.identity.persistentID == selectedID
+           }) {
+            selectedTabID = selectedTab.id
+        } else if !restoredTabIDs.isEmpty {
+            selectedTabID = restoredTabIDs.first
+        }
+
+        if !skippedIdentities.isEmpty {
+            presentRestorationError(for: skippedIdentities)
+        }
+
+        return WorkspaceSessionRestorationResult(
+            restoredTabIDs: restoredTabIDs,
+            skippedDocumentIdentities: skippedIdentities,
+            duplicateLocations: duplicateLocations,
+            wasCancelled: wasCancelled
+        )
     }
 
     func refreshRecents(using store: any RecentDocumentStoring) async {
@@ -188,12 +268,26 @@ final class WorkspaceModel {
 
     func dismissError() {
         presentedError = nil
+        presentedErrorTitle = "Unable to Open Document"
     }
 
     func presentOpenError(_ error: Error) {
         guard !(error is CancellationError) else { return }
+        presentedErrorTitle = "Unable to Open Document"
         presentedError = (error as? LocalizedError)?.errorDescription
             ?? "The document could not be opened."
+    }
+
+    func sessionSnapshot(updatedAt: Date = Date()) -> WorkspaceSession? {
+        guard !tabs.isEmpty else { return nil }
+        return WorkspaceSession(
+            documents: tabs.map {
+                WorkspaceSessionDocument(descriptor: $0.document)
+            },
+            selectedDocumentPersistentID: selectedTab?
+                .document.identity.persistentID,
+            updatedAt: updatedAt
+        )
     }
 
     func selectTab(_ id: DocumentTab.ID) {
@@ -266,5 +360,23 @@ final class WorkspaceModel {
     private var selectedTabIndex: Int? {
         guard let selectedTabID else { return nil }
         return tabs.firstIndex { $0.id == selectedTabID }
+    }
+
+    private func presentRestorationError(
+        for identities: [DocumentIdentity]
+    ) {
+        let visibleNames = identities.prefix(3).map {
+            "“\($0.displayName)”"
+        }
+        let remainingCount = identities.count - visibleNames.count
+        let remainingText = remainingCount > 0
+            ? " and \(remainingCount) more"
+            : ""
+
+        presentedErrorTitle = "Some Documents Were Not Restored"
+        presentedError = "FileViewer could not restore "
+            + visibleNames.joined(separator: ", ")
+            + remainingText
+            + ". Open them again from Files."
     }
 }

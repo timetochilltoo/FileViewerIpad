@@ -1,7 +1,7 @@
 # FileViewer for iPad — Handoff
 
-Last updated: 2026-08-10
-Current phase: Phase 0 and Phase 1 complete; Phase 2 search/reading restoration and scene/new-window routing slices implemented and simulator-tested; relaunch session restoration remains
+Last updated: 2026-08-13
+Current phase: Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; Phase 3 responsive/accessibility and large-document hardening is next
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Intended GitHub repository: `https://github.com/timetochilltoo/FileViewerIpad.git`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
@@ -33,8 +33,11 @@ search, explicit result navigation, and versioned reading-position persistence f
 Markdown visible UTF-16 locations and PDF page/scale. The second Phase 2 slice now
 uses a Codable/Hashable `WindowGroup` payload, `openWindow(value:)`, and an app-local
 scene coordinator to route new-window requests and cross-window duplicate activation
-to exactly one workspace. The simulator suite passes; relaunch-level session
-restoration and physical Files/iCloud acceptance remain.
+to exactly one workspace. The final Phase 2 slice adds bounded, versioned per-scene
+tab/selection snapshots, resolves them through existing bookmarks after relaunch,
+restores reading positions, and skips stale or missing grants with a clear recovery
+alert. A real terminate/relaunch UI test and a separate stale-session UI test pass.
+Physical-device Files/iCloud acceptance remains.
 
 ## 2. Non-negotiable reference rule
 
@@ -111,7 +114,8 @@ FileViewerIpad/
 ├── Core/Models/DocumentModels.swift
 ├── Core/Persistence/
 │   ├── ReadingStateStore.swift
-│   └── RecentDocumentStore.swift
+│   ├── RecentDocumentStore.swift
+│   └── SceneSessionStore.swift
 ├── Core/Search/DocumentSearchIndex.swift
 ├── Features/Markdown/
 │   ├── MarkdownBlockParser.swift
@@ -129,6 +133,7 @@ FileViewerIpadTests/
 ├── DocumentSearchIndexTests.swift
 ├── ReadingStateStoreTests.swift
 ├── RecentDocumentStoreTests.swift
+├── SceneSessionStoreTests.swift
 ├── WorkspaceModelTests.swift
 └── WorkspaceSceneCoordinatorTests.swift
 FileViewerIpadUITests/
@@ -231,7 +236,7 @@ Chosen target:
 - no lower-version compatibility requirement
 - no iPhone, Mac Catalyst, visionOS, or macOS target currently planned
 
-Local tools verified on 2026-07-20:
+Local tools reverified on 2026-08-13:
 
 ```text
 Xcode 26.6 (17F113)
@@ -240,6 +245,7 @@ iOS device SDK 26.5
 iOS Simulator SDK 26.5
 Git 2.50.1
 GitHub CLI 2.94.0
+XcodeGen 2.45.4
 ```
 
 Simulator readiness verified on 2026-07-21:
@@ -262,7 +268,7 @@ GitHub authentication was verified:
 - author name: `timetochilltoo`
 - author email: `152804118+timetochilltoo@users.noreply.github.com`
 
-The intended GitHub repository exists, is public, and was empty when checked. Its default branch is `main`.
+The GitHub repository exists, is public, and uses `main` as its default branch.
 
 The writable workspace is now a Git repository on local branch `main`, with remote:
 
@@ -284,7 +290,7 @@ AppEnvironment
 ├── BookmarkStore
 ├── RecentDocumentStore
 ├── ReadingStateStore
-└── SceneSessionStore (planned for relaunch restoration)
+└── SceneSessionStore
 
 WindowGroup
 └── WorkspaceSceneRoot (one per Codable scene payload)
@@ -303,6 +309,8 @@ Use:
 - SwiftUI `WindowGroup` and `openWindow(value:)` for multiple windows
 - `WorkspaceSceneCoordinator` queues one-shot URL/recent open requests and target
   tab activations by `WorkspaceID`; it is deliberately not a broadcast notification
+- `SceneSessionStore` keeps versioned, bounded tab identity/order/selection metadata
+  per `WorkspaceID`; loaded content and framework objects are never serialized
 - `.fileImporter`, URL handling, and drag/drop for opening
 - security-scoped bookmarks for persistent Files/iCloud access
 - explicit, balanced security-scope lifetimes
@@ -310,6 +318,29 @@ Use:
 - an iPad-adaptive `NavigationSplitView`
 - a read-only `UITextView` adapter when Markdown selection, highlighting, and precise restoration require TextKit
 - versioned persistence records
+
+Scene-session implementation details:
+
+- `WorkspaceSession` schema version 1 contains ordered `WorkspaceSessionDocument`
+  descriptors, the selected document persistent ID, and an update timestamp.
+- `UserDefaultsSceneSessionStore` is an actor using key `scene-sessions.v1`. It
+  deduplicates identities, retains at most 20 documents in each of the 12 most
+  recently updated workspaces, ignores corrupt or unsupported records, and removes
+  empty workspace snapshots.
+- `WorkspaceView` waits for the initial restore attempt before enabling session
+  writes. This prevents an empty/default view from erasing a valid saved session.
+- Persistence runs after open, recent-open, tab close, selection changes, scene
+  inactivity/backgrounding, and before scene teardown.
+- `WorkspaceModel.restoreSession` resolves documents serially through
+  `DocumentAccessServicing`, claims each stable identity through
+  `DocumentAccessRegistry`, restores saved reading state, and then reapplies the
+  saved selection. It never bypasses the normal security/bookmark path.
+- Cancellation leaves persistence disabled for that view task, so a partial restore
+  cannot replace the prior snapshot. Missing/stale items are skipped, the remaining
+  tabs open normally, and one alert lists up to three names plus an overflow count.
+- Debug UI tests isolate bookmark, recent, reading, and session stores under a
+  unique `FILEVIEWER_UI_TEST_SUITE`; production builds always use standard app
+  preferences and do not recognize these launch seams.
 
 ## 7. Security behavior to preserve
 
@@ -401,22 +432,24 @@ Future AI:
 - [x] multiple iPad windows with explicit New Window and Open in New Window actions
 - [x] Markdown/PDF search with match counts, highlighting, and explicit navigation
 - [x] versioned PDF page/scale and Markdown visible-character persistence hooks
-- [ ] scene and tab restoration across relaunch
+- [x] scene and tab restoration across relaunch
 
-The search and reading-position slice is implemented and covered by unit tests on
-the iPad simulator. Scene activation and explicit new-window routing are now
-implemented and covered by coordinator tests plus a UI menu smoke test. Closing a
-workspace releases all of its registry claims. PDF search is currently synchronous
-through PDFKit; larger-document cancellation and async search belong to viewer
-hardening. Relaunch restoration is the remaining Phase 2 implementation unit.
+Phase 2 is implemented and simulator-verified. Scene activation and explicit
+new-window routing are covered by coordinator tests plus a UI menu smoke test.
+Closing a workspace releases all registry claims. `scene-sessions.v1` stores at most
+12 workspaces and 20 deduplicated tab descriptors per workspace, preserves tab order
+and selection, restores each tab through its existing bookmark identity, and never
+stores document bodies. Store/model tests cover schema rejection, corrupt records,
+caps, ordering, selection, reading positions, stale grants, and duplicate ownership.
+UI tests cover a real terminate/relaunch cycle and a missing-bookmark recovery alert.
 
 ### Phase 3: viewer hardening
 
-- responsive layouts
-- keyboard, pointer, accessibility, Dynamic Type
-- cancellation/performance
-- integration fixtures and iPad UI tests
-- privacy/security review
+- [ ] responsive narrow/wide, portrait/landscape, Split View, and Stage Manager layouts
+- [ ] keyboard, pointer, accessibility, and Dynamic Type audit
+- [ ] cancellable/asynchronous large-document search and performance bounds
+- [ ] checked-in non-private integration fixtures and expanded iPad UI tests
+- [ ] privacy/security review
 
 ### Phase 4: Markdown editing
 
@@ -454,6 +487,8 @@ Unit coverage:
 - Markdown parsing and Unicode search
 - PDF index guards
 - reading-state coding/migration/clamping
+- scene-session schema handling, workspace/document caps, tab order/selection,
+  stale bookmarks, and cross-scene duplicate ownership
 - no document content in metadata stores
 
 Integration fixtures:
@@ -471,6 +506,7 @@ UI coverage:
 - both search flows
 - clearing search without page jump
 - restoration after relaunch
+- missing/stale session recovery without blocking launch
 - two independent windows
 - second external open not changing the first window
 - narrow/wide layout
@@ -497,17 +533,18 @@ Open:
 - Apple development team/signing choice for a physical-device build
 - whether the neutral core should become a local Swift package after it grows
 
-Neither blocks simulator-based Phase 2 work.
+Neither blocks simulator-based Phase 3 work.
 
 Known current limitations:
 
-- Scene payload activation and explicit new-window routing are implemented for
-  simulator-tested viewer flows. The app still needs relaunch-level scene/tab
-  restoration, and scene-close behavior should receive a physical-device review.
+- Scene payload activation, explicit new-window routing, and scene/tab relaunch
+  restoration are simulator-tested. Scene background/close timing should still
+  receive a physical-device review.
 - Search uses synchronous in-memory indexing for this first viewer slice; move
   large PDF indexing to an asynchronous, cancellable service during hardening.
-- Persistence is versioned and wired into the readers, but relaunch restoration
-  and scene/tab session restoration still need an end-to-end UI acceptance test.
+- Session persistence intentionally caps data at 12 workspaces and 20 documents per
+  workspace. Unsupported schemas are ignored; stale/missing tabs are reported and
+  removed from the next successful snapshot without deleting the source or recent.
 - PDF fit-page, fit-width, and direct page-number entry remain.
 - External-open document registration and bookmark reopen have automated coverage
   at the router/service level, but still need manual acceptance with real Files and
@@ -519,15 +556,18 @@ Known current limitations:
 1. Read this file and `docs/IPAD_ARCHITECTURE_AND_MIGRATION_PLAN.md`.
 2. Inspect `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` with read-only `git status`. The five documentation modifications listed in Section 2 are expected until the macOS agent commits them; do not clean or modify them.
 3. Check `git status` and preserve any user/agent changes.
-4. Implement versioned scene/tab session restoration across relaunch, using bookmark
-   identities rather than serializing in-memory PDF/SwiftUI objects.
-5. Add an end-to-end UI test for restoration and verify missing/stale bookmarks are
-   skipped with a non-destructive message.
-6. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures on
+4. Begin Phase 3 with a responsive/accessibility audit of `WorkspaceView`,
+   `MarkdownReaderView`, and `PDFReaderView`: verify compact and regular widths,
+   portrait/landscape, 44-point controls, Dynamic Type, and VoiceOver labels.
+5. Add deterministic UI coverage for compact/wide layouts and Markdown/PDF search,
+   including clearing PDF search without moving the reading position.
+6. Move large PDF search to a cancellable asynchronous service and add stale-result,
+   cancellation, and bounded-fixture tests before testing very large documents.
+7. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures on
    a physical iPad when signing is available.
-7. Add/update this handoff after every meaningful implementation unit.
-8. Run the full simulator test command before committing.
-9. Commit and push coherent verified units under the configured Git identity.
+8. Add/update this handoff after every meaningful implementation unit.
+9. Run the full simulator test command before committing.
+10. Commit and push coherent verified units under the configured Git identity.
 
 Do not begin with PDF annotations, Markdown editing, forms, or AI. Do not copy the macOS project wholesale.
 
@@ -537,14 +577,14 @@ Command:
 
 ```bash
 xcodebuild \
+  -quiet \
   -project FileViewerIpad.xcodeproj \
   -scheme FileViewerIpad \
   -destination 'platform=iOS Simulator,id=174A3DF4-AE79-42FF-A063-90ED2887FBD7' \
-  -derivedDataPath /private/tmp/FileViewerIpadDerivedDataSceneFinal \
   test
 ```
 
-Latest full-suite verification on 2026-08-10:
+Latest full-suite verification on 2026-08-13:
 
 - `DocumentAccessRegistryTests`: 2 passed
 - `DocumentAccessServiceTests`: 7 passed
@@ -554,20 +594,25 @@ Latest full-suite verification on 2026-08-10:
 - `PDFReaderModelTests`: 3 passed
 - `ReadingStateStoreTests`: 2 passed
 - `RecentDocumentStoreTests`: 2 passed
-- `WorkspaceModelTests`: 7 passed
+- `SceneSessionStoreTests`: 4 passed
+- `WorkspaceModelTests`: 10 passed
 - `WorkspaceSceneCoordinatorTests`: 4 passed
-- `FileViewerIpadUITests`: 3 passed
-- total: 33 unit tests and 3 UI tests passed, 0 failed
-- Xcode result: `** TEST SUCCEEDED **`
+- `FileViewerIpadUITests`: 5 passed
+- total: 40 unit tests and 5 UI tests passed, 0 failed, 0 skipped
+- Xcode result summary: `Passed` with 45/45 tests
 - result bundle:
-  `/tmp/FileViewerIpadDerivedDataSceneFinal/Logs/Test/Test-FileViewerIpad-2026.08.10_01-35-02-+0800.xcresult`
+  `/Users/patrickshi/Library/Developer/Xcode/DerivedData/FileViewerIpad-fuwbwmgwpkquxghbxzunvmzawqru/Logs/Test/Test-FileViewerIpad-2026.08.13_10-11-44-+0800.xcresult`
 
-The expanded suite also opens the Markdown debug fixture, exposes the Window
-Actions menu, and verifies both `New Window` and `Open in New Window` actions. The
-scene coordinator tests verify that queued requests and activations are delivered
-only to their target workspace. The unit-only follow-up after adding workspace
-close cleanup passed 32 tests at:
-`/tmp/FileViewerIpadDerivedDataScene3/Logs/Test/Test-FileViewerIpad-2026.08.10_01-32-33-+0800.xcresult`.
+The expanded suite opens deterministic Markdown/PDF fixtures, exposes the Window
+Actions menu, and verifies both `New Window` and `Open in New Window`. The scene
+coordinator tests verify that queued requests and activations reach only their
+target workspace. Scene-session tests verify version/corruption handling, bounded
+deduplication, per-workspace isolation, content-free snapshots, restored order and
+selection, reading positions, stale grants, and duplicate ownership. The UI suite
+persists a real app-owned Markdown bookmark/session, terminates the app, relaunches
+with the same isolated preferences suite, and verifies the document reopens. A
+separate UI test seeds a session with no bookmark and verifies the non-blocking
+recovery alert and empty workspace.
 
 The two-page PDF UI fixture was also installed and visually inspected on
 `FileViewer Test iPad`. Continuous pages, the bottom controls, and the navigation
@@ -576,6 +621,20 @@ navigator and verifies its page-thumbnail and outline controls.
 
 Non-blocking simulator output included an Apple runtime duplicate accessibility-class
 warning and an LLDB version-store warning. Neither affected launch or test results.
+
+The non-Debug path also passed an unsigned generic-device Release build on
+2026-08-13:
+
+```bash
+xcodebuild \
+  -quiet \
+  -project FileViewerIpad.xcodeproj \
+  -scheme FileViewerIpad \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
 
 ## 13. Handoff maintenance standard
 
@@ -598,7 +657,16 @@ Every entry should distinguish:
 - planned only
 - deferred
 
-Never describe a planned capability as working. The checked Phase 0/Phase 1 items
-and the checked Phase 2 search/position/scene-routing items above are implemented
-and verified at the stated level; relaunch session restoration and later phases
-remain planned.
+Never describe a planned capability as working. The checked Phase 0, Phase 1, and
+Phase 2 items above are implemented and verified at the stated level. Physical
+Files/iCloud acceptance and Phase 3 onward remain outstanding.
+
+### Checkpoint log
+
+- 2026-07-21: Phase 0 project, simulator, workspace isolation, and seed tests verified.
+- 2026-08-09: Phase 1 readers plus search/reading-position persistence verified.
+- 2026-08-10: targeted scene routing and explicit new-window flows verified and
+  pushed at baseline commit `1f11d44` (`Add iPad scene routing and new-window flows`).
+- 2026-08-13: versioned scene/tab relaunch restoration, stale-bookmark recovery,
+  40 unit tests, and 5 UI tests verified; checkpoint subject is
+  `Add iPad scene session restoration`.
