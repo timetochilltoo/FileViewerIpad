@@ -1,7 +1,7 @@
 # FileViewer for iPad — Handoff
 
-Last updated: 2026-08-13
-Current phase: Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; Phase 3 responsive/accessibility and large-document hardening is next
+Last updated: 2026-09-12
+Current phase: Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; the first Phase 3 responsive/accessibility slice is implemented and compile/unit verified, with final compact UI verification pending CoreSimulator recovery
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Intended GitHub repository: `https://github.com/timetochilltoo/FileViewerIpad.git`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
@@ -38,6 +38,18 @@ tab/selection snapshots, resolves them through existing bookmarks after relaunch
 restores reading positions, and skips stale or missing grants with a clear recovery
 alert. A real terminate/relaunch UI test and a separate stale-session UI test pass.
 Physical-device Files/iCloud acceptance remains.
+
+The first Phase 3 slice is now in the working tree. `WorkspaceView` uses bounded
+sidebar widths and a detail safe-area search bar for compact split-view windows;
+`PDFReaderView` uses menu-backed page/zoom actions in compact or accessibility text
+layouts and keeps the expanded controls at regular widths; `MarkdownReaderView`
+narrows its readable column for large Dynamic Type. Reader controls have 44-point
+minimum frames, keyboard shortcuts, pointer hover affordances, and explicit
+VoiceOver labels/traits. Debug-only fixture arguments now cover repeated Markdown
+matches, searchable two-page PDFs, compact size class, and accessibility text.
+The compact branch compiles and the unit suite passes; its final UI run is pending
+because CoreSimulatorService disconnected during launch after exposing the prior
+toolbar-only search control as unreachable.
 
 ## 2. Non-negotiable reference rule
 
@@ -445,11 +457,16 @@ UI tests cover a real terminate/relaunch cycle and a missing-bookmark recovery a
 
 ### Phase 3: viewer hardening
 
-- [ ] responsive narrow/wide, portrait/landscape, Split View, and Stage Manager layouts
-- [ ] keyboard, pointer, accessibility, and Dynamic Type audit
+- [x] adaptive regular/compact reader controls, bounded sidebar widths, and a
+  compact detail search entry point
+- [x] first keyboard/pointer/accessibility/Dynamic Type pass with 44-point
+  primary controls and VoiceOver labels
+- [x] deterministic Markdown/PDF search fixtures plus portrait/landscape smoke
+  coverage (final compact-search rerun pending simulator recovery)
+- [ ] responsive narrow Split View and Stage Manager resize automation
 - [ ] cancellable/asynchronous large-document search and performance bounds
-- [ ] checked-in non-private integration fixtures and expanded iPad UI tests
-- [ ] privacy/security review
+- [ ] checked-in non-private integration fixture matrix and final expanded iPad UI run
+- [ ] physical-device privacy/security review
 
 ### Phase 4: Markdown editing
 
@@ -533,7 +550,11 @@ Open:
 - Apple development team/signing choice for a physical-device build
 - whether the neutral core should become a local Swift package after it grows
 
-Neither blocks simulator-based Phase 3 work.
+The current local CoreSimulator service is an active validation limitation: it
+repeatedly disconnected while launching the UI-test runner and a fresh iPad Pro
+device was still in first-boot migration. The source build remains usable; once
+the service is healthy, rerun the compact UI test before calling the first Phase 3
+slice fully UI-verified.
 
 Known current limitations:
 
@@ -550,24 +571,27 @@ Known current limitations:
   at the router/service level, but still need manual acceptance with real Files and
   iCloud provider documents on a physical iPad.
 - The app has not been signed or run on a physical iPad.
+- The final compact-search safe-area branch is compile- and unit-verified but not
+  yet UI-verified. A previous manual launch confirmed the compact PDF controls;
+  the toolbar-only compact search entry that caused the first failure has since
+  been replaced by the safe-area bar.
 
 ## 11. Exact next steps for the next agent
 
 1. Read this file and `docs/IPAD_ARCHITECTURE_AND_MIGRATION_PLAN.md`.
 2. Inspect `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad` with read-only `git status`. The five documentation modifications listed in Section 2 are expected until the macOS agent commits them; do not clean or modify them.
 3. Check `git status` and preserve any user/agent changes.
-4. Begin Phase 3 with a responsive/accessibility audit of `WorkspaceView`,
-   `MarkdownReaderView`, and `PDFReaderView`: verify compact and regular widths,
-   portrait/landscape, 44-point controls, Dynamic Type, and VoiceOver labels.
-5. Add deterministic UI coverage for compact/wide layouts and Markdown/PDF search,
-   including clearing PDF search without moving the reading position.
+4. Recover or replace the local CoreSimulator device/service, then rerun
+   `testCompactAccessibilityLayoutKeepsPrimaryPDFControlsReachable` against the
+   safe-area search implementation and inspect a compact screenshot.
+5. Run the full simulator command; confirm the 42 unit and 9 UI test counts and
+   update this handoff with the result bundle path.
 6. Move large PDF search to a cancellable asynchronous service and add stale-result,
-   cancellation, and bounded-fixture tests before testing very large documents.
+  cancellation, and bounded-fixture tests before testing very large documents.
 7. Add manual Files/iCloud acceptance checks with real Markdown and PDF fixtures on
-   a physical iPad when signing is available.
+  a physical iPad when signing is available.
 8. Add/update this handoff after every meaningful implementation unit.
-9. Run the full simulator test command before committing.
-10. Commit and push coherent verified units under the configured Git identity.
+9. Commit and push coherent verified units under the configured Git identity.
 
 Do not begin with PDF annotations, Markdown editing, forms, or AI. Do not copy the macOS project wholesale.
 
@@ -622,6 +646,48 @@ navigator and verifies its page-thumbnail and outline controls.
 Non-blocking simulator output included an Apple runtime duplicate accessibility-class
 warning and an LLDB version-store warning. Neither affected launch or test results.
 
+### Phase 3 checkpoint — 2026-09-12
+
+The following working-tree changes are implemented:
+
+- `WorkspaceView.swift`: bounded 220/280/360-point sidebar widths, balanced split
+  behavior, 44-point search/navigation controls, keyboard shortcuts, close-tab
+  accessibility action, and a compact detail safe-area search bar with a dedicated
+  text field after activation.
+- `MarkdownReaderView.swift`: compact/accessibility-aware readable width and
+  padding, interactive keyboard dismissal, heading traits, task semantics, and
+  hidden decorative quote bars.
+- `PDFReaderView.swift`: fit-page state synchronization, regular-width controls,
+  compact menu-backed page/zoom actions, larger touch targets, navigator shortcuts,
+  and thumbnail labels/values/hints.
+- `FileViewerIpadApp.swift`: repeated searchable fixture text plus debug-only
+  compact-size-class and accessibility-text launch seams.
+- `PDFReaderModelTests.swift` and `FileViewerIpadUITests.swift`: PDF clear-search
+  and fit-page regression coverage plus Markdown/PDF search, orientation, and
+  compact accessibility tests.
+
+Verification:
+
+- `xcodebuild -project FileViewerIpad.xcodeproj -scheme FileViewerIpad -destination
+  'platform=iOS Simulator,id=174A3DF4-AE79-42FF-A063-90ED2887FBD7' -quiet
+  build-for-testing` passed after the final focus-state change.
+- Unit-only `xcodebuild ... -only-testing:FileViewerIpadTests
+  -parallel-testing-enabled NO -quiet test` completed with exit 0; the expanded
+  target contains 42 unit tests.
+- Focused Markdown-search, PDF-search-clearing, and landscape-layout UI tests
+  passed before the final compact-search patch. The compact test initially failed
+  because a toolbar-only search item was not reachable; the implementation was
+  moved to the detail safe area and the test now targets the revealed
+  `compact-search-field`.
+- The final compact UI rerun was not completed: CoreSimulatorService disconnected
+  during repeated app/test launches (`NSMachErrorDomain -308` in the failed run),
+  and a fresh iPad Pro device remained in first-boot data migration. Treat this
+  branch as compile/unit verified but compact-UI unverified until rerun.
+
+The prior full-suite result remains the authoritative 40-unit/5-UI baseline in the
+section above. Do not claim a 42-unit/9-UI full pass until the compact branch is
+rerun and the complete suite finishes on a healthy simulator.
+
 The non-Debug path also passed an unsigned generic-device Release build on
 2026-08-13:
 
@@ -670,3 +736,7 @@ Files/iCloud acceptance and Phase 3 onward remain outstanding.
 - 2026-08-13: versioned scene/tab relaunch restoration, stale-bookmark recovery,
   40 unit tests, and 5 UI tests verified; checkpoint subject is
   `Add iPad scene session restoration`.
+- 2026-09-12: first Phase 3 responsive/accessibility slice implemented; build-for-
+  testing and 42 unit tests passed. Compact search was moved from an unreachable
+  toolbar item into a detail safe-area bar after focused UI evidence. Final compact
+  UI/full-suite rerun is pending CoreSimulatorService recovery.

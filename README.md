@@ -5,6 +5,9 @@ FileViewer is a native iPadOS Markdown and PDF reading workspace. It is being mi
 ## Current status
 
 Phase 0, Phase 1, and the simulator-verified Phase 2 implementation are complete.
+The first Phase 3 responsive/accessibility slice is implemented and compile/unit
+verified; its final compact-search UI rerun is pending recovery of the local
+CoreSimulator service.
 The app now includes:
 
 - iPadOS 26.0 minimum deployment target
@@ -20,8 +23,13 @@ The app now includes:
 - read-only Markdown blocks with selectable inline formatting
 - PDFKit continuous reading with page and zoom controls
 - PDF thumbnail and outline navigation with defensive page-index validation
+- adaptive regular/compact PDF controls with fit-page actions and 44-point touch targets
 - per-tab case-insensitive Markdown/PDF search with match counts, highlighting,
   and explicit next/previous navigation
+- a compact-width detail search bar that stays reachable when the split-view
+  toolbar collapses
+- Dynamic Type-aware Markdown sizing, heading/task VoiceOver semantics, and
+  keyboard shortcuts for search, navigation, zoom, and scene actions
 - versioned UserDefaults-backed reading positions for Markdown visible UTF-16
   locations and PDF page/scale, including restore hooks
 - versioned per-scene tab and selection restoration through existing bookmark
@@ -31,12 +39,16 @@ The app now includes:
 - explicit New Window and Open in New Window actions plus targeted activation of
   an already-owning scene
 - deterministic Markdown/PDF UI-test injection seams
-- 40 unit tests and 5 UI tests passing on the dedicated iPad simulator
+- 42 unit tests and 9 iPad UI tests covering the viewer, search, restoration,
+  orientation, and accessibility seams
 
 Scene restoration is covered by a real terminate/relaunch UI test, and stale
 bookmark recovery is covered by a separate UI test. Physical-device signing,
-manual Files/iCloud-provider acceptance, and Phase 3 responsive/accessibility and
-large-document hardening remain outstanding.
+manual Files/iCloud-provider acceptance, asynchronous large-document search, and
+full Split View/Stage Manager coverage remain outstanding. The latest compact UI
+run exposed a simulator-service disconnect after the original toolbar search item
+was found unreachable; the implementation now places that control in the detail
+safe area and needs one clean simulator run.
 
 ## Requirements
 

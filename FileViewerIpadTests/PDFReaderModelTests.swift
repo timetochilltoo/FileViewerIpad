@@ -66,6 +66,44 @@ final class PDFReaderModelTests: XCTestCase {
         XCTAssertNotNil(pdfView.currentPage)
     }
 
+    @MainActor
+    func testClearingSearchKeepsCurrentPDFPage() throws {
+        let model = try XCTUnwrap(PDFReaderModel(data: makeSearchablePDFData()))
+        let pdfView = PDFView()
+        pdfView.document = model.document
+        model.attach(pdfView)
+        model.goToPage(at: 1)
+
+        model.applySearch(
+            SearchState(
+                query: "needle",
+                currentMatchIndex: 1,
+                matchCount: 2,
+                navigationRequestID: UUID()
+            )
+        )
+        let pageBeforeClearing = pdfView.currentPage
+
+        model.applySearch(SearchState())
+
+        XCTAssertTrue(pdfView.currentPage === pageBeforeClearing)
+        XCTAssertNil(pdfView.highlightedSelections)
+    }
+
+    @MainActor
+    func testFitPageEnablesAutomaticScalingWithoutChangingPage() throws {
+        let model = try XCTUnwrap(PDFReaderModel(data: makePDFData()))
+        let pdfView = PDFView()
+        pdfView.document = model.document
+        model.attach(pdfView)
+        model.goToPage(at: 1)
+
+        model.fitPage()
+
+        XCTAssertTrue(pdfView.autoScales)
+        XCTAssertEqual(model.currentPage, 2)
+    }
+
     private func makePDFData() -> Data {
         let renderer = UIGraphicsPDFRenderer(
             bounds: CGRect(x: 0, y: 0, width: 300, height: 400)

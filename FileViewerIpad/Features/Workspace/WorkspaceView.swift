@@ -12,17 +12,22 @@ struct WorkspaceView: View {
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var isShowingImporter = false
     @State private var isShowingNewWindowImporter = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @State private var readingPositionReadyTabIDs: Set<DocumentTab.ID> = []
     @State private var hasCompletedInitialSessionRestore = false
+    @State private var isCompactSearchPresented = false
+    @FocusState private var isSearchFocused: Bool
+    @FocusState private var isCompactSearchFocused: Bool
 #if DEBUG
     @State private var isUITestSessionPersisted = false
 #endif
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             List(selection: $model.selectedTabID) {
                 Section("Open Documents") {
                     if model.tabs.isEmpty {
@@ -37,6 +42,18 @@ struct WorkspaceView: View {
                                     : "doc.plaintext"
                             )
                             .tag(tab.id)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    closeTab(tab.id)
+                                } label: {
+                                    Label("Close Document", systemImage: "xmark")
+                                }
+                            }
+                            .accessibilityAction(
+                                named: Text("Close Document")
+                            ) {
+                                closeTab(tab.id)
+                            }
                         }
                         .onDelete { offsets in
                             let tabIDs = offsets.compactMap { index in
@@ -79,6 +96,7 @@ struct WorkspaceView: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .hoverEffect(.highlight)
                         }
                         .onDelete { offsets in
                             let identities = offsets.compactMap { index in
@@ -98,6 +116,8 @@ struct WorkspaceView: View {
                     }
                 }
             }
+            .accessibilityIdentifier("document-sidebar")
+            .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
             .navigationTitle("FileViewer")
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
@@ -105,17 +125,20 @@ struct WorkspaceView: View {
                         isShowingImporter = true
                     }
                     .keyboardShortcut("o", modifiers: .command)
+                    .accessibilityHint("Choose a Markdown or PDF document from Files")
 
                     Menu {
                         Button("New Window", systemImage: "plus.square.on.square") {
                             openNewWindow()
                         }
+                        .keyboardShortcut("n", modifiers: .command)
                         Button(
                             "Open in New Window",
                             systemImage: "rectangle.badge.plus"
                         ) {
                             isShowingNewWindowImporter = true
                         }
+                        .keyboardShortcut("o", modifiers: [.command, .shift])
                     } label: {
                         Label("Window Actions", systemImage: "rectangle.on.rectangle")
                     }
@@ -125,6 +148,12 @@ struct WorkspaceView: View {
         } detail: {
             if let tab = model.selectedTab {
                 documentView(for: tab)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        VStack(spacing: 0) {
+                            compactSearchBar
+                            searchNavigationBar
+                        }
+                    }
                     .navigationTitle(tab.document.identity.displayName)
                     .navigationBarTitleDisplayMode(.inline)
             } else {
@@ -136,6 +165,8 @@ struct WorkspaceView: View {
                 .accessibilityIdentifier("empty-workspace")
             }
         }
+        .navigationSplitViewStyle(.balanced)
+        .accessibilityIdentifier("workspace")
         .overlay {
             if model.isOpeningDocument {
                 ProgressView("Opening document…")
@@ -244,24 +275,9 @@ struct WorkspaceView: View {
             placement: .toolbar,
             prompt: "Search document"
         )
-        .toolbar {
-            ToolbarItemGroup(placement: .secondaryAction) {
-                if let status = model.searchStatusText {
-                    Text(status)
-                        .foregroundStyle(
-                            status == "No matches" ? .orange : .secondary
-                        )
-                        .accessibilityIdentifier("search-status")
-                }
-                if model.selectedTab?.search.matchCount ?? 0 > 0 {
-                    Button("Previous Match", systemImage: "chevron.up") {
-                        model.previousSearchMatch()
-                    }
-                    Button("Next Match", systemImage: "chevron.down") {
-                        model.nextSearchMatch()
-                    }
-                }
-            }
+        .searchFocused($isSearchFocused)
+        .onSubmit(of: .search) {
+            model.nextSearchMatch()
         }
 #if DEBUG
         .overlay(alignment: .bottomTrailing) {
@@ -314,6 +330,91 @@ struct WorkspaceView: View {
         }
     }
 
+    @ViewBuilder
+    private var compactSearchBar: some View {
+        if horizontalSizeClass == .compact {
+            HStack(spacing: 8) {
+                if isCompactSearchPresented {
+                    TextField(
+                        "Search document",
+                        text: Binding(
+                            get: { model.selectedSearchQuery },
+                            set: { model.updateSearchQuery($0) }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .focused($isCompactSearchFocused)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        model.nextSearchMatch()
+                    }
+                    .accessibilityIdentifier("compact-search-field")
+
+                    Button("Dismiss Search", systemImage: "xmark.circle.fill") {
+                        isCompactSearchPresented = false
+                        isCompactSearchFocused = false
+                    }
+                    .labelStyle(.iconOnly)
+                    .accessibilityHint("Hide the compact document search field")
+                    .frame(minWidth: 44, minHeight: 44)
+                } else {
+                    Spacer(minLength: 0)
+                    Button("Search Document", systemImage: "magnifyingglass") {
+                        isCompactSearchPresented = true
+                        isCompactSearchFocused = true
+                    }
+                    .keyboardShortcut("f", modifiers: .command)
+                    .accessibilityHint("Find text in the open document")
+                    .accessibilityIdentifier("compact-search")
+                    .frame(minWidth: 44, minHeight: 44)
+                }
+            }
+            .controlSize(.large)
+            .frame(minHeight: 44)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+            .background(.bar)
+        }
+    }
+
+    @ViewBuilder
+    private var searchNavigationBar: some View {
+        if let status = model.searchStatusText {
+            HStack(spacing: 4) {
+                Text(status)
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(
+                        status == "No matches" ? .orange : .secondary
+                    )
+                    .lineLimit(1)
+                    .accessibilityLabel("Search results: \(status)")
+                    .accessibilityIdentifier("search-status")
+
+                if model.selectedTab?.search.matchCount ?? 0 > 0 {
+                    Button("Previous Match", systemImage: "chevron.up") {
+                        model.previousSearchMatch()
+                    }
+                    .keyboardShortcut("g", modifiers: [.command, .shift])
+                    .accessibilityIdentifier("search-previous")
+                    .frame(minWidth: 44, minHeight: 44)
+
+                    Button("Next Match", systemImage: "chevron.down") {
+                        model.nextSearchMatch()
+                    }
+                    .keyboardShortcut("g", modifiers: .command)
+                    .accessibilityIdentifier("search-next")
+                    .frame(minWidth: 44, minHeight: 44)
+                }
+            }
+            .labelStyle(.iconOnly)
+            .controlSize(.large)
+            .frame(minHeight: 44)
+            .padding(.horizontal, 8)
+            .background(.bar)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
+
     private func open(_ url: URL) {
         Task {
             await openAndRefresh(url)
@@ -323,6 +424,13 @@ struct WorkspaceView: View {
     private func open(_ recent: RecentDocument) {
         Task {
             await openRecentAndRefresh(recent)
+        }
+    }
+
+    private func closeTab(_ tabID: DocumentTab.ID) {
+        Task {
+            await model.closeTab(tabID, registry: documentRegistry)
+            await persistSession()
         }
     }
 

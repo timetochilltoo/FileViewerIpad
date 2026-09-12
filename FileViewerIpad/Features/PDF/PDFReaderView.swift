@@ -105,6 +105,12 @@ final class PDFReaderModel {
         pdfView?.zoomOut(nil)
     }
 
+    func fitPage() {
+        guard let pdfView else { return }
+        pdfView.autoScales = true
+        synchronizePage()
+    }
+
     func synchronizePage() {
         guard let currentPDFPage = pdfView?.currentPage else { return }
         let index = document.index(for: currentPDFPage)
@@ -211,6 +217,8 @@ final class PDFReaderModel {
 
 struct PDFReaderView: View {
     @State private var model: PDFReaderModel?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let search: SearchState
     let readingPosition: ReadingPosition
     let onReadingPositionChanged: (ReadingPosition) -> Void
@@ -244,14 +252,17 @@ struct PDFReaderView: View {
                         Button("PDF Navigator", systemImage: "sidebar.right") {
                             model.isNavigatorPresented.toggle()
                         }
+                        .keyboardShortcut("l", modifiers: [.command, .shift])
+                        .accessibilityHint("Show page thumbnails and document outline")
+                        .accessibilityIdentifier("pdf-navigator")
                     }
                 }
-        .inspector(
-            isPresented: Binding(
-                get: { model.isNavigatorPresented },
-                set: { model.isNavigatorPresented = $0 }
-            )
-        ) {
+                .inspector(
+                    isPresented: Binding(
+                        get: { model.isNavigatorPresented },
+                        set: { model.isNavigatorPresented = $0 }
+                    )
+                ) {
                     PDFNavigatorView(model: model)
                         .inspectorColumnWidth(min: 220, ideal: 260, max: 340)
                 }
@@ -264,8 +275,21 @@ struct PDFReaderView: View {
         }
     }
 
+    @ViewBuilder
     private func controls(_ model: PDFReaderModel) -> some View {
-        HStack(spacing: 4) {
+        if usesCompactControls {
+            compactControls(model)
+        } else {
+            expandedControls(model)
+        }
+    }
+
+    private var usesCompactControls: Bool {
+        horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize
+    }
+
+    private func expandedControls(_ model: PDFReaderModel) -> some View {
+        HStack(spacing: 2) {
             Button("First Page", systemImage: "backward.end.fill") {
                 model.firstPage()
             }
@@ -296,12 +320,56 @@ struct PDFReaderView: View {
                 model.zoomIn()
             }
         }
-        .labelStyle(.iconOnly)
-        .buttonStyle(.borderless)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.regularMaterial, in: Capsule())
-        .padding(.bottom, 8)
+        .pdfControlBar()
+    }
+
+    private func compactControls(_ model: PDFReaderModel) -> some View {
+        HStack(spacing: 2) {
+            Menu("Page Actions", systemImage: "ellipsis") {
+                Button("First Page", systemImage: "backward.end.fill") {
+                    model.firstPage()
+                }
+                Button("Last Page", systemImage: "forward.end.fill") {
+                    model.lastPage()
+                }
+                Button("Fit Page", systemImage: "arrow.up.left.and.arrow.down.right") {
+                    model.fitPage()
+                }
+            }
+            .accessibilityHint("Show first, last, and fit-page actions")
+
+            Button("Previous Page", systemImage: "chevron.left") {
+                model.previousPage()
+            }
+
+            Text("\(model.currentPage) / \(model.pageCount)")
+                .font(.callout.monospacedDigit())
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(minWidth: 54)
+                .accessibilityLabel(
+                    "Page \(model.currentPage) of \(model.pageCount)"
+                )
+                .accessibilityIdentifier("pdf-page-indicator")
+
+            Button("Next Page", systemImage: "chevron.right") {
+                model.nextPage()
+            }
+
+            Menu("Zoom Actions", systemImage: "magnifyingglass") {
+                Button("Zoom Out", systemImage: "minus.magnifyingglass") {
+                    model.zoomOut()
+                }
+                Button("Zoom In", systemImage: "plus.magnifyingglass") {
+                    model.zoomIn()
+                }
+                Button("Fit Page", systemImage: "arrow.up.left.and.arrow.down.right") {
+                    model.fitPage()
+                }
+            }
+            .accessibilityHint("Show zoom and fit-page actions")
+        }
+        .pdfControlBar()
     }
 }
 
@@ -353,6 +421,11 @@ private struct PDFNavigatorView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Page \(index + 1)")
+                            .accessibilityValue(
+                                model.currentPage == index + 1 ? "Current page" : ""
+                            )
+                            .accessibilityHint("Open page \(index + 1)")
                         }
                     }
                     .padding(.horizontal)
@@ -390,6 +463,20 @@ private struct PDFNavigatorView: View {
                 }
             }
         }
+    }
+}
+
+private extension View {
+    func pdfControlBar() -> some View {
+        labelStyle(.iconOnly)
+            .buttonStyle(.borderless)
+            .controlSize(.large)
+            .frame(minHeight: 44)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
     }
 }
 

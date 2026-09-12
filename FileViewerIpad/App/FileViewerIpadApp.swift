@@ -48,7 +48,7 @@ private struct WorkspaceSceneRoot: View {
     }
 
     var body: some View {
-        WorkspaceView(
+        let workspace = WorkspaceView(
             model: model,
             documentAccess: environment.documentAccess,
             documentRegistry: environment.documentRegistry,
@@ -58,6 +58,13 @@ private struct WorkspaceSceneRoot: View {
             openRequestRouter: environment.openRequestRouter,
             sceneCoordinator: environment.sceneCoordinator
         )
+#if DEBUG
+        workspace
+            .modifier(UITestCompactLayoutModifier())
+            .modifier(UITestDynamicTypeModifier())
+#else
+        workspace
+#endif
     }
 
     private static func makeInitialModel(workspaceID: WorkspaceID) -> WorkspaceModel {
@@ -74,7 +81,17 @@ private struct WorkspaceSceneRoot: View {
             model.open(
                 ResolvedDocument(
                     descriptor: descriptor,
-                    content: .markdown("# Phase 1 Test Document\n\nSelectable Markdown body.")
+                    content: .markdown(
+                        """
+                        # Phase 1 Test Document
+
+                        Selectable Markdown body with the first needle.
+
+                        ## Search Section
+
+                        A second NEEDLE verifies case-insensitive navigation.
+                        """
+                    )
                 )
             )
         } else if ProcessInfo.processInfo.arguments.contains("--ui-test-pdf") {
@@ -93,6 +110,8 @@ private struct WorkspaceSceneRoot: View {
                     context.beginPage()
                     "Phase 1 PDF — Page \(page)"
                         .draw(at: CGPoint(x: 72, y: 72))
+                    "Searchable PDF token"
+                        .draw(at: CGPoint(x: 72, y: 108))
                 }
             }
             model.open(
@@ -106,3 +125,31 @@ private struct WorkspaceSceneRoot: View {
         return model
     }
 }
+
+#if DEBUG
+private struct UITestCompactLayoutModifier: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.arguments.contains(
+            "--ui-test-compact-layout"
+        ) {
+            content.environment(\.horizontalSizeClass, .compact)
+        } else {
+            content
+        }
+    }
+}
+
+private struct UITestDynamicTypeModifier: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.arguments.contains(
+            "--ui-test-accessibility-text"
+        ) {
+            content.environment(\.dynamicTypeSize, .accessibility3)
+        } else {
+            content
+        }
+    }
+}
+#endif

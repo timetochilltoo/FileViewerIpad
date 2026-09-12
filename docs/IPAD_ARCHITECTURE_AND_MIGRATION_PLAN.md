@@ -1,7 +1,7 @@
 # FileViewer for iPad — Architecture and Migration Plan
 
-Last updated: 2026-08-13
-Status: Planning complete; Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; Phase 3 viewer hardening is next
+Last updated: 2026-09-12
+Status: Planning complete; Phase 0, Phase 1, and the Phase 2 implementation are simulator-verified; the first Phase 3 responsive/accessibility slice is implemented and compile/unit verified
 Writable workspace: `/Users/patrickshi/Documents/Codex/FileViewer_iPad`  
 Read-only macOS reference: `/Users/patrickshi/Documents/Codex/R_FileViewer_ipad`
 
@@ -385,6 +385,19 @@ Use iPad-native adaptive layout rather than desktop fixed geometry.
 
 Required layout test widths should include narrow split-screen, portrait, landscape, and a resizable Stage Manager-style window. No PDF page may be covered by the sidebar, and no primary navigation control may become unreachable.
 
+The first Phase 3 viewer-hardening slice is implemented in the iPad target:
+`WorkspaceView` uses bounded adaptive sidebar widths and keeps compact search in a
+detail safe-area bar so it remains reachable when a split-view toolbar collapses;
+`PDFReaderView` switches to menu-backed page/zoom actions at compact widths while
+preserving expanded controls at regular widths; Markdown content narrows its
+readable column for accessibility text sizes. Primary controls use at least
+44-point frames, keyboard shortcuts cover search/navigation/zoom/sidebar/window
+actions, and Markdown headings/tasks plus PDF thumbnails expose VoiceOver semantics.
+The debug-only launch arguments `--ui-test-compact-layout` and
+`--ui-test-accessibility-text` exercise the compact/Dynamic Type branch without
+changing release behavior. Split View/Stage Manager resize automation and
+cancellable large-document indexing remain later Phase 3 work.
+
 ## 5.9 Persistence
 
 Use separate stores behind protocols:
@@ -529,6 +542,22 @@ simulator:
 
 The result bundle is temporary and is not a project artifact. Also perform device builds with the personal signing team once configured.
 
+Phase 3 checkpoint on 2026-09-12:
+
+- `xcodebuild ... -quiet build-for-testing` passed after the adaptive-control and
+  compact-safe-area search changes.
+- The unit-only command for `FileViewerIpadTests` completed with exit 0; the
+  expanded target currently contains 42 unit tests.
+- Before the final compact-search patch, focused Markdown-search, PDF-search
+  clearing, and landscape-layout UI tests passed; the existing five baseline UI
+  tests remain covered by the prior full-suite result above.
+- The compact accessibility test first failed because the toolbar-only compact
+  search item was not reachable. The code now moves that entry point into the
+  detail safe area and gives the revealed field a deterministic identifier.
+  A clean rerun was not possible after CoreSimulatorService repeatedly
+  disconnected during test/app launch, so this final compact branch is compile-
+  verified but UI-unverified.
+
 ## 8. Migration phases and exit criteria
 
 ### Phase 0 — Project and foundations
@@ -586,12 +615,15 @@ Exit: two iPad windows remain independent; search does not pull the user back af
 
 ### Phase 3 — Responsive, accessible, and hardened viewer
 
-- all adaptive layouts
-- keyboard/pointer support
-- accessibility labels and Dynamic Type
-- performance/cancellation work
-- fixture integration tests and iPad UI tests
-- privacy/security review
+- [x] adaptive regular/compact reader controls, bounded sidebar widths, and a
+  compact detail search entry point
+- [x] first keyboard/pointer/accessibility/Dynamic Type pass with 44-point
+  primary controls and VoiceOver labels
+- [x] deterministic Markdown/PDF search fixtures plus portrait/landscape smoke
+  coverage (final compact-search rerun pending simulator recovery)
+- [ ] narrow Split View and Stage Manager resize automation
+- [ ] cancellable/asynchronous large-document search and performance bounds
+- [ ] full fixture integration matrix and physical-device privacy/security review
 
 Exit: prioritized viewer workflows pass automated tests and manual iPad acceptance checks.
 

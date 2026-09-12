@@ -6,6 +6,8 @@ struct MarkdownReaderView: View {
     let readingPosition: ReadingPosition
     let onReadingPositionChanged: (ReadingPosition) -> Void
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var lastReportedLocation: Int?
 
     private var blocks: [PositionedMarkdownBlock] {
@@ -38,11 +40,15 @@ struct MarkdownReaderView: View {
                 }
                 .textSelection(.enabled)
                 .accessibilityIdentifier("markdown-content")
-                .frame(maxWidth: 820, alignment: .leading)
+                .frame(
+                    maxWidth: dynamicTypeSize.isAccessibilitySize ? 720 : 820,
+                    alignment: .leading
+                )
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, contentHorizontalPadding)
                 .padding(.vertical, 20)
             }
+            .scrollDismissesKeyboard(.interactively)
             .coordinateSpace(name: "markdown-scroll")
             .onAppear {
                 restorePosition(using: proxy)
@@ -60,6 +66,13 @@ struct MarkdownReaderView: View {
         }
         .background(Color(uiColor: .systemBackground))
         .accessibilityIdentifier("markdown-reader")
+    }
+
+    private var contentHorizontalPadding: CGFloat {
+        if horizontalSizeClass == .compact {
+            return 16
+        }
+        return dynamicTypeSize.isAccessibilitySize ? 20 : 24
     }
 
     private var activeBlockIndex: Int {
@@ -122,6 +135,7 @@ struct MarkdownReaderView: View {
                 .fontWeight(level <= 2 ? .bold : .semibold)
                 .padding(.top, level == 1 ? 8 : 2)
                 .blockSearchBackground(isActive: isActive)
+                .accessibilityAddTraits(.isHeader)
         case let .paragraph(text):
             Text(inlineMarkdown(text))
                 .font(.body)
@@ -139,11 +153,16 @@ struct MarkdownReaderView: View {
                 Text(inlineMarkdown(text))
             }
             .blockSearchBackground(isActive: isActive)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(
+                "\(isComplete ? "Completed" : "Incomplete") task: \(text)"
+            )
         case let .quote(text):
             HStack(alignment: .top, spacing: 12) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(.secondary)
                     .frame(width: 4)
+                    .accessibilityHidden(true)
                 Text(inlineMarkdown(text))
                     .foregroundStyle(.secondary)
             }
