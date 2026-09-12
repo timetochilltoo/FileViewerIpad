@@ -6,8 +6,8 @@ FileViewer is a native iPadOS Markdown and PDF reading workspace. It is being mi
 
 Phase 0, Phase 1, and the simulator-verified Phase 2 implementation are complete.
 The first Phase 3 responsive/accessibility slice is implemented and compile/unit
-verified; its final compact-search UI rerun is pending recovery of the local
-CoreSimulator service.
+verified. Targeted compact-accessibility and Markdown-rendering UI tests pass;
+the PDF/full-suite rerun is currently blocked by CoreSimulatorService discovery.
 The app now includes:
 
 - iPadOS 26.0 minimum deployment target
@@ -28,6 +28,8 @@ The app now includes:
   and explicit next/previous navigation
 - a compact-width detail search bar that stays reachable when the split-view
   toolbar collapses
+- detail navigation-bar actions for opening documents and creating windows when
+  the sidebar is collapsed
 - Dynamic Type-aware Markdown sizing, heading/task VoiceOver semantics, and
   keyboard shortcuts for search, navigation, zoom, and scene actions
 - versioned UserDefaults-backed reading positions for Markdown visible UTF-16
@@ -45,10 +47,10 @@ The app now includes:
 Scene restoration is covered by a real terminate/relaunch UI test, and stale
 bookmark recovery is covered by a separate UI test. Physical-device signing,
 manual Files/iCloud-provider acceptance, asynchronous large-document search, and
-full Split View/Stage Manager coverage remain outstanding. The latest compact UI
-run exposed a simulator-service disconnect after the original toolbar search item
-was found unreachable; the implementation now places that control in the detail
-safe area and needs one clean simulator run.
+full Split View/Stage Manager coverage remain outstanding. The latest PDF/full-
+suite runs exposed simulator-service disconnects; targeted compact and Markdown
+runs pass, and the detail bar keeps search, open, and window actions reachable when
+the sidebar is hidden.
 
 ## Requirements
 

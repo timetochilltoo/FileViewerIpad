@@ -119,50 +119,34 @@ struct WorkspaceView: View {
             .accessibilityIdentifier("document-sidebar")
             .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 360)
             .navigationTitle("FileViewer")
-            .toolbar {
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button("Open Document", systemImage: "folder") {
-                        isShowingImporter = true
-                    }
-                    .keyboardShortcut("o", modifiers: .command)
-                    .accessibilityHint("Choose a Markdown or PDF document from Files")
-
-                    Menu {
-                        Button("New Window", systemImage: "plus.square.on.square") {
-                            openNewWindow()
+        } detail: {
+            Group {
+                if let tab = model.selectedTab {
+                    documentView(for: tab)
+                        .safeAreaInset(edge: .top, spacing: 0) {
+                            VStack(spacing: 0) {
+                                compactSearchBar
+                                searchNavigationBar
+                            }
                         }
-                        .keyboardShortcut("n", modifiers: .command)
-                        Button(
-                            "Open in New Window",
-                            systemImage: "rectangle.badge.plus"
-                        ) {
-                            isShowingNewWindowImporter = true
-                        }
-                        .keyboardShortcut("o", modifiers: [.command, .shift])
-                    } label: {
-                        Label("Window Actions", systemImage: "rectangle.on.rectangle")
-                    }
-                    .accessibilityIdentifier("window-actions")
+                        .navigationTitle(tab.document.identity.displayName)
+                        .navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView(
+                        "No Document Open",
+                        systemImage: "doc.text.magnifyingglass",
+                        description: Text("Open a Markdown or PDF document to begin reading.")
+                    )
+                    .accessibilityIdentifier("empty-workspace")
                 }
             }
-        } detail: {
-            if let tab = model.selectedTab {
-                documentView(for: tab)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        VStack(spacing: 0) {
-                            compactSearchBar
-                            searchNavigationBar
-                        }
-                    }
-                    .navigationTitle(tab.document.identity.displayName)
-                    .navigationBarTitleDisplayMode(.inline)
-            } else {
-                ContentUnavailableView(
-                    "No Document Open",
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text("Open a Markdown or PDF document to begin reading.")
-                )
-                .accessibilityIdentifier("empty-workspace")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    openDocumentButton
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    windowActionsMenu
+                }
             }
         }
         .navigationSplitViewStyle(.balanced)
@@ -432,6 +416,33 @@ struct WorkspaceView: View {
             await model.closeTab(tabID, registry: documentRegistry)
             await persistSession()
         }
+    }
+
+    private var openDocumentButton: some View {
+        Button("Open Document", systemImage: "folder") {
+            isShowingImporter = true
+        }
+        .keyboardShortcut("o", modifiers: .command)
+        .accessibilityHint("Choose a Markdown or PDF document from Files")
+    }
+
+    private var windowActionsMenu: some View {
+        Menu {
+            Button("New Window", systemImage: "plus.square.on.square") {
+                openNewWindow()
+            }
+            .keyboardShortcut("n", modifiers: .command)
+            Button(
+                "Open in New Window",
+                systemImage: "rectangle.badge.plus"
+            ) {
+                isShowingNewWindowImporter = true
+            }
+            .keyboardShortcut("o", modifiers: [.command, .shift])
+        } label: {
+            Label("Window Actions", systemImage: "rectangle.on.rectangle")
+        }
+        .accessibilityIdentifier("window-actions")
     }
 
     private func openAndRefresh(_ url: URL) async {
